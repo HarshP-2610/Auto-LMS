@@ -1,0 +1,89 @@
+import { Routes, Route } from 'react-router-dom';
+
+// Public Pages
+import { Home } from '@/pages/public/Home';
+import { Courses } from '@/pages/public/Courses';
+import { CourseDetails } from '@/pages/public/CourseDetails';
+import { About } from '@/pages/public/About';
+import { Contact } from '@/pages/public/Contact';
+
+// Auth Pages
+import { Login } from '@/pages/auth/Login';
+import { Register } from '@/pages/auth/Register';
+import { InstructorLogin } from '@/pages/auth/InstructorLogin';
+import { InstructorRegister } from '@/pages/auth/InstructorRegister';
+import { AdminLogin } from '@/pages/auth/AdminLogin';
+
+// Student Dashboard
+import { StudentDashboard } from '@/dashboards/student/StudentDashboard';
+import { MyCourses } from '@/dashboards/student/MyCourses';
+import { QuizPage } from '@/dashboards/student/QuizPage';
+import { Certificates } from '@/dashboards/student/Certificates';
+import { StudentProfile } from '@/dashboards/student/StudentProfile';
+import { QuizzesList } from '@/dashboards/student/QuizzesList';
+
+// Instructor Dashboard
+import { InstructorDashboard } from '@/dashboards/instructor/InstructorDashboard';
+import { ManageCourses } from '@/dashboards/instructor/ManageCourses';
+import { ManageLessons } from '@/dashboards/instructor/ManageLessons';
+import { ManageQuizzes } from '@/dashboards/instructor/ManageQuizzes';
+import { InstructorAnalytics } from '@/dashboards/instructor/InstructorAnalytics';
+import { InstructorProfile } from '@/dashboards/instructor/InstructorProfile';
+
+// Admin Dashboard
+import { AdminDashboard } from '@/dashboards/admin/AdminDashboard';
+import { ManageUsers } from '@/dashboards/admin/ManageUsers';
+import { ApproveCourses } from '@/dashboards/admin/ApproveCourses';
+import { PlatformAnalytics } from '@/dashboards/admin/PlatformAnalytics';
+import { SystemSettings } from '@/dashboards/admin/SystemSettings';
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Home />} />
+      <Route path="/courses" element={<Courses />} />
+      <Route path="/courses/:id" element={<CourseDetails />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
+
+      {/* Auth Routes */}
+      <Route path="/auth/login" element={<Login />} />
+      <Route path="/auth/register" element={<Register />} />
+      <Route path="/auth/instructor-login" element={<InstructorLogin />} />
+      <Route path="/auth/instructor-register" element={<InstructorRegister />} />
+      <Route path="/auth/admin-login" element={<AdminLogin />} />
+
+      {/* Student Dashboard Routes */}
+      <Route path="/student/dashboard" element={<StudentDashboard />} />
+      <Route path="/student/courses" element={<MyCourses />} />
+      <Route path="/student/quizzes" element={<QuizzesList />} />
+      <Route path="/student/quiz/:id" element={<QuizPage />} />
+      <Route path="/student/certificates" element={<Certificates />} />
+      <Route path="/student/profile" element={<StudentProfile />} />
+
+      {/* Instructor Dashboard Routes */}
+      <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+      <Route path="/instructor/courses" element={<ManageCourses />} />
+      <Route path="/instructor/lessons" element={<ManageLessons />} />
+      <Route path="/instructor/quizzes" element={<ManageQuizzes />} />
+      <Route path="/instructor/analytics" element={<InstructorAnalytics />} />
+      <Route path="/instructor/profile" element={<InstructorProfile />} />
+
+      {/* Admin Dashboard Routes */}
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/users" element={<ManageUsers />} />
+      <Route path="/admin/courses" element={<ApproveCourses />} />
+      <Route path="/admin/analytics" element={<PlatformAnalytics />} />
+      <Route path="/admin/settings" element={<SystemSettings />} />
+
+      {/* 404 Route */}
+      <Route path="*" element={<div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">404</h1>
+          <p className="text-gray-600 dark:text-gray-400">Page not found</p>
+        </div>
+      </div>} />
+    </Routes>
+  );
+}

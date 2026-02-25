@@ -29,10 +29,31 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
       if (stored) {
         setUserData(JSON.parse(stored));
       }
+
+      // Proactively fetch latest user data if we are in a dashboard
+      const token = localStorage.getItem('userToken');
+      if (token && isDashboard) {
+        // Different endpoint based on role if needed, or a generic /profile
+        fetch('http://localhost:5000/api/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.name) {
+              setUserData(prev => ({ ...prev, name: data.name, avatar: data.avatar }));
+              // Keep localStorage in sync
+              const updatedData = { ...JSON.parse(stored || '{}'), ...data };
+              localStorage.setItem('userData', JSON.stringify(updatedData));
+            }
+          })
+          .catch(err => console.error(`Error fetching ${userRole} profile:`, err));
+      }
     } catch (error) {
       console.error("Failed parsing user data", error);
     }
-  }, []);
+  }, [userRole, isDashboard]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -54,8 +75,8 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled || isDashboard
-          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm'
-          : 'bg-transparent'
+        ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-sm'
+        : 'bg-transparent'
         }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,8 +99,8 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
                   key={link.href}
                   to={link.href}
                   className={`text-sm font-medium transition-colors ${location.pathname === link.href
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
                     }`}
                 >
                   {link.label}
@@ -105,6 +126,11 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
             {/* User Actions */}
             {isDashboard ? (
               <div className="flex items-center gap-4">
+                {userData?.name && (
+                  <span className="hidden md:block text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {userRole === 'admin' ? `Admin: ${userData.name}` : `Welcome, ${userData.name}`}
+                  </span>
+                )}
                 <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                   <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -183,8 +209,8 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
                     to={link.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`text-sm font-medium py-2 ${location.pathname === link.href
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-gray-700 dark:text-gray-300'
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-gray-700 dark:text-gray-300'
                       }`}
                   >
                     {link.label}

@@ -13,6 +13,8 @@ import { Register } from '@/pages/auth/Register';
 import { InstructorLogin } from '@/pages/auth/InstructorLogin';
 import { InstructorRegister } from '@/pages/auth/InstructorRegister';
 import { AdminLogin } from '@/pages/auth/AdminLogin';
+import { PendingDetails } from '@/pages/instructor/PendingDetails';
+import { ApplicationStatus } from '@/pages/instructor/ApplicationStatus';
 
 // Student Dashboard
 import { StudentDashboard } from '@/dashboards/student/StudentDashboard';
@@ -36,6 +38,7 @@ import { ManageUsers } from '@/dashboards/admin/ManageUsers';
 import { ApproveCourses } from '@/dashboards/admin/ApproveCourses';
 import { PlatformAnalytics } from '@/dashboards/admin/PlatformAnalytics';
 import { SystemSettings } from '@/dashboards/admin/SystemSettings';
+import { PendingInstructors } from '@/dashboards/admin/PendingInstructors';
 
 export function AppRoutes() {
   return (
@@ -53,6 +56,8 @@ export function AppRoutes() {
       <Route path="/auth/instructor-login" element={<InstructorLogin />} />
       <Route path="/auth/instructor-register" element={<InstructorRegister />} />
       <Route path="/auth/admin-login" element={<AdminLogin />} />
+      <Route path="/instructor/pending-details" element={<PendingDetails />} />
+      <Route path="/instructor/application-status" element={<ApplicationStatus />} />
 
       {/* Student Dashboard Routes */}
       <Route path="/student/dashboard" element={<StudentDashboard />} />
@@ -74,6 +79,7 @@ export function AppRoutes() {
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/users" element={<ManageUsers />} />
       <Route path="/admin/courses" element={<ApproveCourses />} />
+      <Route path="/admin/pending-instructors" element={<PendingInstructors />} />
       <Route path="/admin/analytics" element={<PlatformAnalytics />} />
       <Route path="/admin/settings" element={<SystemSettings />} />
 

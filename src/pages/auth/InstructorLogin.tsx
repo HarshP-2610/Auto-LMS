@@ -40,10 +40,33 @@ export function InstructorLogin() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      window.location.href = '/instructor/dashboard';
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/instructor-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('userToken', data.token);
+          localStorage.setItem('userData', JSON.stringify(data));
+          window.location.href = '/instructor/dashboard';
+        } else {
+          setErrors({ submit: data.message || 'Login failed' });
+        }
+      } catch (error) {
+        setErrors({ submit: 'Failed to connect to the server' });
+      }
     }
   };
 
@@ -77,6 +100,11 @@ export function InstructorLogin() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {errors.submit && (
+              <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+                {errors.submit}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

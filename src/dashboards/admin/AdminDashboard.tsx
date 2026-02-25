@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   Users,
   BookOpen,
@@ -15,10 +16,82 @@ import { StatCard } from '@/components/common/StatCard';
 import { UserGrowthChart } from '@/components/charts/UserGrowthChart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { adminAnalytics, pendingCourses, users } from '@/data/mockData';
+import { adminAnalytics } from '@/data/mockData';
+import { toast } from 'sonner';
 
 export function AdminDashboard() {
-  const pendingInstructors = users.filter((u) => u.role === 'instructor' && u.status === 'pending');
+  const [pendingInstructors, setPendingInstructors] = useState<any[]>([]);
+  const [pendingCourses, setPendingCourses] = useState<any[]>([]);
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+
+      // Fetch pending instructors
+      const pendingResponse = await fetch('http://localhost:5000/api/admin/pending-instructors', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (pendingResponse.ok) {
+        setPendingInstructors(await pendingResponse.json());
+      }
+
+      // Fetch pending courses
+      const coursesResponse = await fetch('http://localhost:5000/api/admin/pending-courses', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (coursesResponse.ok) {
+        setPendingCourses(await coursesResponse.json());
+      }
+
+      // Fetch profile
+      const profileResponse = await fetch('http://localhost:5000/api/users/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (profileResponse.ok) {
+        const data = await profileResponse.json();
+        setUserName(data.name || '');
+      }
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleCourseAction = async (courseId: string, action: 'approve' | 'reject') => {
+    try {
+      const token = localStorage.getItem('userToken');
+      const res = await fetch(`http://localhost:5000/api/admin/pending-courses/${courseId}/${action}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        toast.success(`Course ${action}d successfully`);
+        fetchData(); // Refresh
+      } else {
+        const err = await res.json();
+        toast.error(err.message || `Failed to ${action} course`);
+      }
+    } catch (error) {
+      toast.error('Something went wrong');
+    }
+  };
 
   return (
     <DashboardLayout userRole="admin">
@@ -26,7 +99,7 @@ export function AdminDashboard() {
         {/* Welcome Header */}
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-            Admin Dashboard
+            Welcome, {userName || 'Administrator'}! 👋
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Platform overview and management
@@ -61,7 +134,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Pending Approvals"
-            value={adminAnalytics.pendingApprovals}
+            value={pendingInstructors.length + pendingCourses.length}
             icon={AlertCircle}
             color="orange"
           />
@@ -93,78 +166,83 @@ export function AdminDashboard() {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Pending Approvals
                 </h2>
-                <Badge variant="secondary">{adminAnalytics.pendingApprovals}</Badge>
+                <Badge variant="secondary">{pendingInstructors.length + pendingCourses.length}</Badge>
               </div>
 
               <div className="space-y-4">
-                {/* Pending Instructors */}
-                {pendingInstructors.slice(0, 2).map((instructor) => (
-                  <div
-                    key={instructor.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                        <UserCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                {loading ? (
+                  <p className="text-center text-gray-500 py-4">Loading approvals...</p>
+                ) : (pendingInstructors.length === 0 && pendingCourses.length === 0) ? (
+                  <p className="text-center text-gray-500 py-4">No pending approvals at the moment.</p>
+                ) : (
+                  <>
+                    {/* Pending Instructors */}
+                    {pendingInstructors.slice(0, 3).map((instructor) => (
+                      <div
+                        key={instructor._id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                            <UserCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {instructor.name}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Instructor Application
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to="/admin/pending-instructors">View Details</Link>
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {instructor.name}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Instructor Application
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="text-green-600">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" className="text-red-600">
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                    ))}
 
-                {/* Pending Courses */}
-                {pendingCourses.slice(0, 2).map((course) => (
-                  <div
-                    key={course.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    {/* Pending Courses */}
+                    {pendingCourses.slice(0, 3).map((course) => (
+                      <div
+                        key={course._id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                            <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {course.title}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              by {course.instructor?.name || 'Instructor'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="text-green-600 hover:text-green-700 h-8" onClick={() => handleCourseAction(course._id, 'approve')}>
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 h-8" onClick={() => handleCourseAction(course._id, 'reject')}>
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {course.title}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          by {course.instructor}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="text-green-600">
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" className="text-red-600">
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                    ))}
+                  </>
+                )}
               </div>
 
-              <Button variant="outline" className="w-full mt-4" asChild>
-                <Link to="/admin/courses">View All Pending</Link>
-              </Button>
+              {(pendingInstructors.length > 3 || pendingCourses.length > 3) && (
+                <Button variant="outline" className="w-full mt-4" asChild>
+                  <Link to="/admin/courses">View All Pending</Link>
+                </Button>
+              )}
             </div>
           </div>
 

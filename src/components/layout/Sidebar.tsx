@@ -50,6 +50,7 @@ export function Sidebar({ userRole }: SidebarProps) {
     { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Users', href: '/admin/users', icon: Users },
     { label: 'Courses', href: '/admin/courses', icon: BookOpen },
+    { label: 'Pending Instructors', href: '/admin/pending-instructors', icon: User },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Settings', href: '/admin/settings', icon: Settings },
   ];
@@ -58,14 +59,13 @@ export function Sidebar({ userRole }: SidebarProps) {
     userRole === 'student'
       ? studentNavItems
       : userRole === 'instructor'
-      ? instructorNavItems
-      : adminNavItems;
+        ? instructorNavItems
+        : adminNavItems;
 
   return (
     <aside
-      className={`fixed left-0 top-16 lg:top-20 bottom-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 z-40 ${
-        isCollapsed ? 'w-16' : 'w-64'
-      }`}
+      className={`fixed left-0 top-16 lg:top-20 bottom-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 z-40 ${isCollapsed ? 'w-16' : 'w-64'
+        }`}
     >
       <div className="flex flex-col h-full">
         {/* Collapse Toggle */}
@@ -91,11 +91,10 @@ export function Sidebar({ userRole }: SidebarProps) {
                 <li key={item.href}>
                   <Link
                     to={item.href}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
-                      isActive
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${isActive
                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                         : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }`}
+                      }`}
                     title={isCollapsed ? item.label : undefined}
                   >
                     <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
@@ -113,9 +112,8 @@ export function Sidebar({ userRole }: SidebarProps) {
         <div className="p-3 border-t border-gray-200 dark:border-gray-800">
           <Link
             to="/"
-            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all ${
-              isCollapsed ? 'justify-center' : ''
-            }`}
+            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all ${isCollapsed ? 'justify-center' : ''
+              }`}
             title={isCollapsed ? 'Logout' : undefined}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />

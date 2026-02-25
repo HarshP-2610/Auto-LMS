@@ -1,28 +1,24 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, GraduationCap, ArrowRight, CheckCircle, UserCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, GraduationCap, ArrowRight, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
 
 export function InstructorRegister() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     email: '',
     password: '',
-    expertise: '',
-    bio: '',
-    agreeTerms: false,
+    subject: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     if (errors[name]) {
@@ -33,69 +29,46 @@ export function InstructorRegister() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required';
-    }
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-
-    if (!formData.expertise.trim()) {
-      newErrors.expertise = 'Area of expertise is required';
-    }
-
-    if (!formData.bio.trim()) {
-      newErrors.bio = 'Brief bio is required';
-    }
-
-    if (!formData.agreeTerms) {
-      newErrors.agreeTerms = 'You must agree to the terms';
-    }
+    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Please enter a valid email';
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    if (!formData.subject.trim()) newErrors.subject = 'Subject is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      setIsSubmitted(true);
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/instructor-applications/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('instructorAppToken', data.token);
+        navigate('/instructor/pending-details');
+      } else {
+        setErrors({ submit: data.message || 'Registration failed' });
+      }
+    } catch (error) {
+      setErrors({ submit: 'Failed to connect to the server' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Application Submitted!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Thank you for your interest in becoming an instructor. Our team will review your
-            application and get back to you within 3-5 business days.
-          </p>
-          <Button
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-            asChild
-          >
-            <Link to="/">Return Home</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -119,14 +92,20 @@ export function InstructorRegister() {
               <UserCheck className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Become an Instructor
+              Instructor Registration
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Share your knowledge with millions of students worldwide
+              Start your journey as an instructor today
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {errors.submit && (
+              <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+                {errors.submit}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -139,6 +118,20 @@ export function InstructorRegister() {
                 className={errors.name ? 'border-red-500' : ''}
               />
               {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="text"
+                placeholder="+1 234 567 8900"
+                value={formData.phone}
+                onChange={handleChange}
+                className={errors.phone ? 'border-red-500' : ''}
+              />
+              {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
             </div>
 
             <div className="space-y-2">
@@ -185,63 +178,27 @@ export function InstructorRegister() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expertise">Area of Expertise</Label>
+              <Label htmlFor="subject">Subject</Label>
               <Input
-                id="expertise"
-                name="expertise"
+                id="subject"
+                name="subject"
                 type="text"
-                placeholder="e.g., Web Development, Data Science, Design"
-                value={formData.expertise}
+                placeholder="e.g., Mathematics, Computer Science"
+                value={formData.subject}
                 onChange={handleChange}
-                className={errors.expertise ? 'border-red-500' : ''}
+                className={errors.subject ? 'border-red-500' : ''}
               />
-              {errors.expertise && (
-                <p className="text-sm text-red-500">{errors.expertise}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">Brief Bio</Label>
-              <Textarea
-                id="bio"
-                name="bio"
-                placeholder="Tell us about your experience and why you want to teach..."
-                rows={3}
-                value={formData.bio}
-                onChange={handleChange}
-                className={errors.bio ? 'border-red-500' : ''}
-              />
-              {errors.bio && <p className="text-sm text-red-500">{errors.bio}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-start gap-2">
-                <Checkbox
-                  id="agreeTerms"
-                  checked={formData.agreeTerms}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, agreeTerms: checked as boolean })
-                  }
-                  className={errors.agreeTerms ? 'border-red-500' : ''}
-                />
-                <Label htmlFor="agreeTerms" className="text-sm font-normal leading-tight">
-                  I agree to the{' '}
-                  <Link to="#" className="text-blue-600 hover:underline">
-                    Instructor Terms
-                  </Link>{' '}
-                  and understand that my application will be reviewed
-                </Label>
-              </div>
-              {errors.agreeTerms && (
-                <p className="text-sm text-red-500">{errors.agreeTerms}</p>
+              {errors.subject && (
+                <p className="text-sm text-red-500">{errors.subject}</p>
               )}
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50"
             >
-              Submit Application
+              {isSubmitting ? 'Registering...' : 'Register as Instructor'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </form>
@@ -256,15 +213,6 @@ export function InstructorRegister() {
                 Sign in
               </Link>
             </p>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Looking to learn instead?
-            </p>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/auth/register">Create Student Account</Link>
-            </Button>
           </div>
         </div>
       </div>

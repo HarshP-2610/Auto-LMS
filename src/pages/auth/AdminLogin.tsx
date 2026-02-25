@@ -38,10 +38,35 @@ export function AdminLogin() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loginError, setLoginError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError('');
     if (validateForm()) {
-      window.location.href = '/admin/dashboard';
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          if (data.role !== 'admin') {
+            setLoginError('Access denied: You are not an administrator.');
+            return;
+          }
+          localStorage.setItem('userToken', data.token);
+          localStorage.setItem('userData', JSON.stringify(data));
+          window.location.href = '/admin/dashboard';
+        } else {
+          setLoginError(data.message || 'Login failed. Please try again.');
+        }
+      } catch (error) {
+        setLoginError('An error occurred during login. Please try again.');
+      }
     }
   };
 
@@ -71,6 +96,11 @@ export function AdminLogin() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {loginError && (
+              <div className="bg-red-500/10 border border-red-500 text-red-500 p-3 rounded-lg text-sm text-center">
+                {loginError}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-300">
                 Admin Email
@@ -82,9 +112,8 @@ export function AdminLogin() {
                 placeholder="admin@autolms.com"
                 value={formData.email}
                 onChange={handleChange}
-                className={`bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 ${
-                  errors.email ? 'border-red-500' : ''
-                }`}
+                className={`bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 ${errors.email ? 'border-red-500' : ''
+                  }`}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email}</p>
@@ -103,9 +132,8 @@ export function AdminLogin() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 pr-10 ${
-                    errors.password ? 'border-red-500' : ''
-                  }`}
+                  className={`bg-gray-700 border-gray-600 text-white placeholder:text-gray-500 pr-10 ${errors.password ? 'border-red-500' : ''
+                    }`}
                 />
                 <button
                   type="button"

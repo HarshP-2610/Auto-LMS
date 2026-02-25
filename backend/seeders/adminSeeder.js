@@ -10,6 +10,8 @@ const seedAdmin = async () => {
                 email: 'admin@autolms.com',
                 password: 'Admin1234',
                 role: 'admin',
+                phone: '0000000000',
+                address: 'Admin Office',
                 adminLevel: 5,
                 permissions: ['full_access']
             });

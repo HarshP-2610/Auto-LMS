@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -8,16 +9,54 @@ import {
   Star,
   Eye,
   ChevronRight,
+  Clock,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/common/StatCard';
 import { RevenueChart } from '@/components/charts/RevenueChart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { instructorAnalytics, courses } from '@/data/mockData';
+import { instructorAnalytics } from '@/data/mockData';
+import { CreateCourseModal } from './CreateCourseModal';
 
 export function InstructorDashboard() {
-  const myCourses = courses.slice(0, 4);
+  const [userName, setUserName] = useState('');
+  const [myDocs, setMyDocs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchInstructorData = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+
+      // Fetch Profile
+      const profileRes = await fetch('http://localhost:5000/api/users/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (profileRes.ok) {
+        const data = await profileRes.json();
+        setUserName(data.name || '');
+      }
+
+      // Fetch My Courses
+      const coursesRes = await fetch('http://localhost:5000/api/courses/my-courses', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (coursesRes.ok) {
+        const data = await coursesRes.json();
+        setMyDocs(data.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch instructor data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInstructorData();
+  }, []);
 
   return (
     <DashboardLayout userRole="instructor">
@@ -26,19 +65,27 @@ export function InstructorDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-              Welcome back, Instructor! 👋
+              Welcome back, {userName || 'Instructor'}! 👋
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Here is how your courses are performing
             </p>
           </div>
-          <Button asChild className="bg-gradient-to-r from-purple-600 to-blue-600">
-            <Link to="/instructor/courses">
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Course
-            </Link>
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all active:scale-95"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Course
           </Button>
         </div>
+
+        {/* Create Course Modal */}
+        <CreateCourseModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={fetchInstructorData}
+        />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -52,7 +99,7 @@ export function InstructorDashboard() {
           />
           <StatCard
             title="Total Courses"
-            value={instructorAnalytics.totalCourses}
+            value={myDocs.filter(c => c.status === 'published').length || 0}
             icon={BookOpen}
             color="purple"
           />
@@ -109,41 +156,60 @@ export function InstructorDashboard() {
               </div>
 
               <div className="space-y-4">
-                {myCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800"
-                  >
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      className="w-20 h-14 object-cover rounded-lg"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                        {course.title}
-                      </h3>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {course.enrolledStudents?.toLocaleString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          {course.rating}
-                        </span>
-                        <Badge variant="secondary">{course.category}</Badge>
+                {loading ? (
+                  <p className="text-center text-gray-500 py-8">Loading courses...</p>
+                ) : myDocs.length === 0 ? (
+                  <div className="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                    <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">You haven't created any courses yet.</p>
+                    <Button variant="link" onClick={() => setIsModalOpen(true)}>Create your first course</Button>
+                  </div>
+                ) : (
+                  myDocs.slice(0, 5).map((course) => (
+                    <div
+                      key={course._id}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all"
+                    >
+                      <div className="w-20 h-14 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
+                        <img
+                          src={course.thumbnail}
+                          alt={course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                            {course.title}
+                          </h3>
+                          <Badge
+                            variant={course.status === 'published' ? 'default' : course.status === 'pending' ? 'secondary' : 'destructive'}
+                            className="text-[10px] py-0 px-2 h-5"
+                          >
+                            {course.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            {course.enrolledStudents || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {course.duration}
+                          </span>
+                          <Badge variant="secondary" className="bg-transparent border-gray-200 dark:border-gray-700">{course.category}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/courses/${course._id}`}>
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link to={`/courses/${course.id}`}>
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  )))}
               </div>
             </div>
           </div>
@@ -156,11 +222,9 @@ export function InstructorDashboard() {
                 Quick Actions
               </h2>
               <div className="space-y-3">
-                <Button className="w-full justify-start" asChild>
-                  <Link to="/instructor/courses">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Course
-                  </Link>
+                <Button className="w-full justify-start" onClick={() => setIsModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Course
                 </Button>
                 <Button variant="outline" className="w-full justify-start" asChild>
                   <Link to="/instructor/lessons">

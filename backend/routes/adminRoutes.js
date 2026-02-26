@@ -6,7 +6,12 @@ const {
     rejectInstructor,
     getPendingCourses,
     approveCourse,
-    rejectCourse
+    rejectCourse,
+    getAllUsers,
+    toggleUserStatus,
+    getAllCourses,
+    deleteCourse,
+    getAdminNotifications
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -36,5 +41,20 @@ router.route('/pending-courses/:id/approve')
 
 router.route('/pending-courses/:id/reject')
     .put(protect, adminCheck, rejectCourse);
+
+router.route('/users')
+    .get(protect, adminCheck, getAllUsers);
+
+router.route('/users/:id/toggle-status')
+    .put(protect, adminCheck, toggleUserStatus);
+
+router.route('/courses-all')
+    .get(protect, adminCheck, getAllCourses);
+
+router.route('/courses/:id')
+    .delete(protect, adminCheck, deleteCourse);
+
+router.route('/notifications')
+    .get(protect, adminCheck, getAdminNotifications);
 
 module.exports = router;

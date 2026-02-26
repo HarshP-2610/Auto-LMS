@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -24,9 +24,10 @@ interface CreateCourseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess?: () => void;
+    courseToEdit?: any;
 }
 
-export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseModalProps) {
+export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: CreateCourseModalProps) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -39,6 +40,33 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseMo
         duration: '',
         thumbnail: '',
     });
+
+    useEffect(() => {
+        if (courseToEdit) {
+            setFormData({
+                title: courseToEdit.title || '',
+                description: courseToEdit.description || '',
+                skills: Array.isArray(courseToEdit.skills) ? courseToEdit.skills.join(', ') : (courseToEdit.skills || ''),
+                category: courseToEdit.category || '',
+                difficulty: courseToEdit.difficulty || '',
+                price: courseToEdit.price?.toString() || '',
+                duration: courseToEdit.duration || '',
+                thumbnail: courseToEdit.thumbnail || '',
+            });
+        } else {
+            setFormData({
+                title: '',
+                description: '',
+                skills: '',
+                category: '',
+                difficulty: '',
+                price: '',
+                duration: '',
+                thumbnail: '',
+            });
+        }
+        setStep(1);
+    }, [courseToEdit, isOpen]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,8 +83,14 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseMo
         setLoading(true);
         try {
             const token = localStorage.getItem('userToken');
-            const res = await fetch('http://localhost:5000/api/courses', {
-                method: 'POST',
+            const url = courseToEdit
+                ? `http://localhost:5000/api/courses/${courseToEdit._id}`
+                : 'http://localhost:5000/api/courses';
+
+            const method = courseToEdit ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -67,7 +101,7 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseMo
             const data = await res.json();
 
             if (res.ok) {
-                toast.success('Course submitted for review!');
+                toast.success(courseToEdit ? 'Course updated successfully!' : 'Course submitted for review!');
                 onSuccess?.();
                 onClose();
                 // Reset form
@@ -270,6 +304,7 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseMo
                         ))}
                     </div>
                     <DialogTitle className="text-2xl">
+                        {courseToEdit ? 'Edit Course: ' : ''}
                         {step === 1 && 'Basic Information'}
                         {step === 2 && 'Pricing & Details'}
                         {step === 3 && 'Course Branding'}
@@ -304,7 +339,7 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess }: CreateCourseMo
                             disabled={loading}
                             className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 ml-auto font-semibold"
                         >
-                            {loading ? 'Submitting...' : 'Submit Course'}
+                            {loading ? (courseToEdit ? 'Updating...' : 'Submitting...') : (courseToEdit ? 'Update Course' : 'Submit Course')}
                         </Button>
                     )}
                 </DialogFooter>

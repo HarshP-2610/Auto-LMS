@@ -3,7 +3,10 @@ const router = express.Router();
 const {
     createCourse,
     getCourses,
-    getMyCourses
+    getMyCourses,
+    getCourse,
+    deleteCourse,
+    updateCourse
 } = require('../controllers/courseController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -12,5 +15,11 @@ router.route('/')
     .post(protect, createCourse);
 
 router.get('/my-courses', protect, getMyCourses);
+
+router.route('/:id')
+    .get(getCourse)
+    .put(protect, updateCourse)
+    .delete(protect, deleteCourse);
+
 
 module.exports = router;

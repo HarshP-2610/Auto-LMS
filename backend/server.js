@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -14,6 +15,12 @@ connectDB().then(() => {
 
 const app = express();
 
+// Logging middleware
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
+
 // Middleware
 app.use(express.json());
 app.use(cors());
@@ -24,6 +31,11 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/instructor-applications', require('./routes/instructorApplicationRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/courses', require('./routes/courseRoutes'));
+app.use('/api/lessons', require('./routes/lessonRoutes'));
+app.use('/api/topics', require('./routes/topicRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
+
+app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
 // Basic Route
 app.get('/', (req, res) => {

@@ -66,7 +66,28 @@ const userSchema = new mongoose.Schema({
     // ==========================================
     instructorBio: {
         type: String,
-        maxlength: 500
+        maxlength: 1000
+    },
+    instructorTitle: {
+        type: String,
+        default: 'Instructor'
+    },
+    location: {
+        type: String,
+        default: ''
+    },
+    expertise: [{
+        type: String
+    }],
+    payoutSettings: {
+        method: {
+            type: String,
+            default: 'PayPal'
+        },
+        schedule: {
+            type: String,
+            default: 'Monthly'
+        }
     },
     taughtCourses: [{
         type: mongoose.Schema.Types.ObjectId,

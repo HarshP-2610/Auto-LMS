@@ -144,11 +144,107 @@ const rejectCourse = async (req, res) => {
     }
 };
 
+// @desc    Get all users (students and instructors)
+// @route   GET /api/admin/users
+// @access  Private/Admin
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({ role: { $in: ['student', 'instructor'] } }).sort({ createdAt: -1 });
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Toggle user active status
+// @route   PUT /api/admin/users/:id/toggle-status
+// @access  Private/Admin
+const toggleUserStatus = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.isActive = !user.isActive;
+        await user.save();
+
+        res.status(200).json({ message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully`, user });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get all courses (students and instructors)
+// @route   GET /api/admin/courses-all
+// @access  Private/Admin
+const getAllCourses = async (req, res) => {
+    try {
+        const courses = await Course.find({}).populate('instructor', 'name email').sort({ createdAt: -1 });
+        res.status(200).json(courses);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete a course
+// @route   DELETE /api/admin/courses/:id
+// @access  Private/Admin
+const deleteCourse = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+        await Course.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: 'Course deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get notifications for admin (pending requests)
+// @route   GET /api/admin/notifications
+// @access  Private/Admin
+const getAdminNotifications = async (req, res) => {
+    try {
+        const pendingApplications = await InstructorApplication.find({ status: 'pending' }).select('name email createdAt');
+        const pendingCourses = await Course.find({ status: 'pending' }).populate('instructor', 'name').select('title instructor createdAt');
+
+        const notifications = [
+            ...pendingApplications.map(app => ({
+                id: app._id,
+                type: 'instructor_application',
+                message: `New instructor application from ${app.name}`,
+                time: app.createdAt,
+                link: '/admin/pending-instructors'
+            })),
+            ...pendingCourses.map(course => ({
+                id: course._id,
+                type: 'course_approval',
+                message: `New course submission: ${course.title}`,
+                time: course.createdAt,
+                link: '/admin/courses'
+            }))
+        ].sort((a, b) => new Date(b.time) - new Date(a.time));
+
+        res.status(200).json(notifications);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getPendingInstructors,
     approveInstructor,
     rejectInstructor,
     getPendingCourses,
     approveCourse,
-    rejectCourse
+    rejectCourse,
+    getAllUsers,
+    toggleUserStatus,
+    getAllCourses,
+    deleteCourse,
+    getAdminNotifications
 };

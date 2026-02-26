@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Star,
@@ -11,6 +11,9 @@ import {
   ChevronUp,
   Share2,
   Heart,
+  Loader2,
+  Play,
+  Clock,
 } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -18,12 +21,97 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { courses } from '@/data/mockData';
 
+function TopicList({ lessonId }: { lessonId: string }) {
+  const [topics, setTopics] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/topics/lesson/${lessonId}`);
+        const data = await response.json();
+        if (response.ok) {
+          setTopics(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch topics');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTopics();
+  }, [lessonId]);
+
+  if (loading) return <div className="text-xs text-gray-400 py-2">Loading content...</div>;
+  if (topics.length === 0) return <div className="text-xs text-gray-400 py-2 italic text-center border border-dashed rounded-lg">Coming Soon</div>;
+
+  return (
+    <div className="space-y-2">
+      {topics.map((topic, idx) => (
+        <div key={topic._id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-700 group/topic">
+          <div className="w-6 h-6 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-[10px] font-bold text-blue-600">
+            {idx + 1}
+          </div>
+          <Play className="w-3.5 h-3.5 text-blue-500 opacity-60 group-hover/topic:opacity-100" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-gray-700 dark:text-gray-300 truncate font-medium">{topic.title}</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <Clock className="w-3 h-3" />
+            {topic.duration}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function CourseDetails() {
   const { id } = useParams<{ id: string }>();
+  const [course, setCourse] = useState<any>(null);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const course = courses.find((c) => c.id === id);
+  useEffect(() => {
+    fetchCourse();
+    fetchLessons();
+  }, [id]);
+
+  const fetchCourse = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/courses/${id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setCourse(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch course');
+    }
+  };
+
+  const fetchLessons = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/lessons/course/${id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setLessons(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch lessons');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
 
   if (!course) {
     return (
@@ -72,11 +160,10 @@ export function CourseDetails() {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${
-                          i < Math.floor(course.rating || 0)
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-600'
-                        }`}
+                        className={`w-4 h-4 ${i < Math.floor(course.rating || 0)
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-600'
+                          }`}
                       />
                     ))}
                   </div>
@@ -150,9 +237,8 @@ export function CourseDetails() {
                       onClick={() => setIsWishlisted(!isWishlisted)}
                     >
                       <Heart
-                        className={`w-5 h-5 ${
-                          isWishlisted ? 'fill-red-500 text-red-500' : ''
-                        }`}
+                        className={`w-5 h-5 ${isWishlisted ? 'fill-red-500 text-red-500' : ''
+                          }`}
                       />
                     </Button>
                     <Button variant="outline" size="icon" className="flex-1">
@@ -201,7 +287,7 @@ export function CourseDetails() {
                 What you will learn
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {course.tags?.map((tag) => (
+                {course.skills?.map((tag: string) => (
                   <div key={tag} className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700 dark:text-gray-300">Master {tag}</span>
@@ -219,43 +305,42 @@ export function CourseDetails() {
                 <div className="p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {course.lessons?.length} sections • {course.lessonsCount} lessons •{' '}
+                      {lessons.length} sections • {' '}
                       {course.duration} total
                     </span>
                   </div>
                 </div>
                 <div>
-                  {course.lessons?.map((lesson, index) => (
+                  {lessons.map((lesson: any, index: number) => (
                     <div
-                      key={lesson.id}
+                      key={lesson._id}
                       className="border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                     >
                       <button
-                        onClick={() => toggleLesson(lesson.id)}
+                        onClick={() => toggleLesson(lesson._id)}
                         className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-gray-400 text-sm">{index + 1}</span>
                           <PlayCircle className="w-5 h-5 text-gray-400" />
-                          <span className="text-gray-900 dark:text-white text-left">
+                          <span className="text-gray-900 dark:text-white text-left font-medium">
                             {lesson.title}
                           </span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm text-gray-500">{lesson.duration}</span>
-                          {expandedLesson === lesson.id ? (
+                          {expandedLesson === lesson._id ? (
                             <ChevronUp className="w-5 h-5 text-gray-400" />
                           ) : (
                             <ChevronDown className="w-5 h-5 text-gray-400" />
                           )}
                         </div>
                       </button>
-                      {expandedLesson === lesson.id && (
-                        <div className="px-4 pb-4 pl-12">
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            This lesson covers the fundamentals of {lesson.title.toLowerCase()}.
-                            You will learn through practical examples and hands-on exercises.
+                      {expandedLesson === lesson._id && (
+                        <div className="px-4 pb-4 pl-12 bg-gray-50/50 dark:bg-gray-800/20 py-4">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4">
+                            {lesson.description || `This section covers ${lesson.title}.`}
                           </p>
+                          <TopicList lessonId={lesson._id} />
                         </div>
                       )}
                     </div>

@@ -197,10 +197,10 @@ export function InstructorLogin() {
               Not an instructor?
             </p>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" asChild>
+              <Button variant="outline" className="flex-1 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white" asChild>
                 <Link to="/auth/login">Student Login</Link>
               </Button>
-              <Button variant="outline" className="flex-1" asChild>
+              <Button variant="outline" className="flex-1 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white" asChild>
                 <Link to="/auth/admin-login">Admin Login</Link>
               </Button>
             </div>

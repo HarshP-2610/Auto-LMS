@@ -44,6 +44,25 @@ export function ManageCourses() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState<any>(null);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('All Courses');
+
+  const categories = [
+    "All Courses",
+    "Development",
+    "Data Science",
+    "Design",
+    "Mobile Development",
+    "Cloud Computing",
+    "Marketing",
+    "Business",
+    "Cybersecurity",
+    "Artificial Intelligence",
+    "DevOps",
+    "Finance",
+    "Photography",
+    "Personal Development",
+    "Health & Fitness"
+  ];
 
   const fetchMyCourses = async () => {
     try {
@@ -68,9 +87,12 @@ export function ManageCourses() {
   }, []);
 
   const filteredCourses = coursesList.filter(
-    (course) =>
-      course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.category.toLowerCase().includes(searchQuery.toLowerCase())
+    (course) => {
+      const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'All Courses' || course.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }
   );
 
   const handleCreateSuccess = () => {
@@ -132,16 +154,33 @@ export function ManageCourses() {
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search courses..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Filters and Search */}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-wrap gap-2 pb-2 overflow-x-auto no-scrollbar">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${selectedCategory === cat
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:border-purple-500'
+                  }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-12 rounded-xl border-gray-200 focus:ring-purple-500"
+            />
+          </div>
         </div>
 
         {/* Courses Table */}

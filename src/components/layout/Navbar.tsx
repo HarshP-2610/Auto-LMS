@@ -16,16 +16,20 @@ import {
 
 interface NavbarProps {
   isDashboard?: boolean;
-  userRole?: 'student' | 'instructor' | 'admin';
+  userRole?: 'student' | 'instructor' | 'admin' | string;
 }
 
-export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProps) {
+export function Navbar({ isDashboard = false, userRole: propUserRole = 'student' }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [userData, setUserData] = useState<{ name?: string; avatar?: string } | null>(null);
+  const [userData, setUserData] = useState<{ name?: string; avatar?: string; role?: string } | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+
+  const activeRole = userData?.role || propUserRole;
 
   useEffect(() => {
     try {
@@ -35,7 +39,8 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
       }
 
       const token = localStorage.getItem('userToken');
-      if (token && isDashboard) {
+      if (token) {
+        setIsAuthenticated(true);
         fetch('http://localhost:5000/api/users/profile', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -44,15 +49,15 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
           .then(res => res.json())
           .then(data => {
             if (data.name) {
-              setUserData(prev => ({ ...prev, name: data.name, avatar: data.avatar }));
+              setUserData(prev => ({ ...prev, name: data.name, avatar: data.avatar, role: data.role || prev?.role }));
               const updatedData = { ...JSON.parse(stored || '{}'), ...data };
               localStorage.setItem('userData', JSON.stringify(updatedData));
             }
           })
-          .catch(err => console.error(`Error fetching ${userRole} profile:`, err));
+          .catch(err => console.error(`Error fetching profile:`, err));
       }
 
-      if (token && userRole === 'admin') {
+      if (token && activeRole === 'admin') {
         fetch('http://localhost:5000/api/admin/notifications', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -69,7 +74,7 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
     } catch (error) {
       console.error("Failed parsing user data", error);
     }
-  }, [userRole, isDashboard]);
+  }, [activeRole]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,14 +90,12 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
     window.location.href = '/';
   };
 
-  const navLinks = isDashboard
-    ? []
-    : [
-      { label: 'Home', href: '/' },
-      { label: 'Courses', href: '/courses' },
-      { label: 'About', href: '/about' },
-      { label: 'Contact', href: '/contact' },
-    ];
+  const navLinks = [
+    { label: 'Home', href: '/' },
+    { label: 'Courses', href: '/courses' },
+    { label: 'About Us', href: '/about' },
+    { label: 'Contact', href: '/contact' },
+  ];
 
   return (
     <header
@@ -104,8 +107,8 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
       <nav className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-full">
         <div className="flex items-center justify-between h-full">
           {/* Logo & Search Area */}
-          <div className="flex items-center gap-8 flex-1">
-            <Link to="/" className="flex items-center gap-2 group">
+          <div className="flex items-center gap-6 lg:gap-8 flex-1">
+            <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
@@ -115,7 +118,7 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
             </Link>
 
             {isDashboard && (
-              <div className="hidden md:flex items-center max-w-md w-full ml-4">
+              <div className="hidden md:flex items-center max-w-xs xl:max-w-md w-full ml-4">
                 <div className="relative w-full group">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                   <input
@@ -128,9 +131,9 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
             )}
           </div>
 
-          {/* Desktop Navigation (Public) */}
-          <div className="hidden lg:flex items-center gap-8">
-            {!isDashboard &&
+          {/* Desktop Navigation */}
+          <div className={`hidden lg:flex items-center gap-6 xl:gap-8 ${isDashboard ? 'mr-auto ml-8' : ''}`}>
+            {(!isDashboard || activeRole === 'instructor') &&
               navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -161,13 +164,13 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
             </button>
 
             {/* User Actions */}
-            {isDashboard ? (
+            {isAuthenticated ? (
               <div className="flex items-center gap-2 sm:gap-4">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="relative p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 group">
                       <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-12 transition-transform" />
-                      {userRole === 'admin' && notifications.length > 0 && (
+                      {activeRole === 'admin' && notifications.length > 0 && (
                         <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"></span>
                       )}
                     </button>
@@ -177,7 +180,7 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
                       Notifications
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
-                      {userRole === 'admin' ? (
+                      {activeRole === 'admin' ? (
                         notifications.length > 0 ? (
                           notifications.map((notif: any) => (
                             <DropdownMenuItem key={notif.id} asChild>
@@ -223,7 +226,7 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
                           {userData?.name || 'User'}
                         </p>
                         <p className="text-[10px] uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400">
-                          {userRole}
+                          {activeRole}
                         </p>
                       </div>
                     </button>
@@ -234,13 +237,13 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
                       <p className="text-xs text-gray-500 truncate">{userData?.name}</p>
                     </div>
                     <DropdownMenuItem asChild>
-                      <Link to={`/${userRole}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer">
+                      <Link to={`/${activeRole}/profile`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer">
                         <User className="w-4 h-4" />
                         <span className="text-sm font-medium">My Profile</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to={`/${userRole}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer">
+                      <Link to={`/${activeRole}/dashboard`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer">
                         <LayoutDashboard className="w-4 h-4" />
                         <span className="text-sm font-medium">Dashboard Overview</span>
                       </Link>
@@ -258,7 +261,7 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-3">
-                <Button variant="ghost" asChild className="rounded-xl px-6">
+                <Button variant="ghost" asChild className="rounded-xl px-6 dark:text-gray-200 dark:hover:text-white dark:hover:bg-gray-800">
                   <Link to="/auth/login">Login</Link>
                 </Button>
                 <Button
@@ -288,7 +291,7 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
         {isMobileMenuOpen && (
           <div className="lg:hidden py-6 animate-in slide-in-from-top duration-300">
             <div className="flex flex-col gap-2">
-              {!isDashboard &&
+              {(!isDashboard || activeRole === 'instructor') &&
                 navLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -302,9 +305,9 @@ export function Navbar({ isDashboard = false, userRole = 'student' }: NavbarProp
                     {link.label}
                   </Link>
                 ))}
-              {!isDashboard && (
+              {!isAuthenticated && (
                 <div className="flex flex-col gap-3 pt-4 mt-2 border-t border-gray-100 dark:border-gray-800">
-                  <Button variant="outline" asChild className="rounded-xl w-full">
+                  <Button variant="outline" asChild className="rounded-xl w-full dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800">
                     <Link to="/auth/login">Login</Link>
                   </Button>
                   <Button

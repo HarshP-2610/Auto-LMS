@@ -320,7 +320,7 @@ export function Register() {
             <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
               Want to teach on our platform?
             </p>
-            <Button variant="outline" className="w-full" asChild>
+            <Button variant="outline" className="w-full dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-800 dark:hover:text-white" asChild>
               <Link to="/auth/instructor-register">Apply as Instructor</Link>
             </Button>
           </div>

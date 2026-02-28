@@ -13,9 +13,10 @@ import {
   LogOut,
   PlayCircle,
   TrendingUp,
-  UserCheck,
   ShieldCheck,
-  Zap
+  Zap,
+  GraduationCap,
+  ClipboardList
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -52,11 +53,12 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
 
   const adminNavItems: NavItem[] = [
     { label: 'Admin Panel', href: '/admin/dashboard', icon: ShieldCheck },
-    { label: 'User Management', href: '/admin/users', icon: Users },
-    { label: 'Course Review', href: '/admin/courses', icon: BookOpen },
-    { label: 'Instructor Apps', href: '/admin/pending-instructors', icon: UserCheck },
+    { label: 'Students', href: '/admin/students', icon: GraduationCap },
+    { label: 'Instructors', href: '/admin/instructors', icon: Users },
+    { label: 'Requests', href: '/admin/requests', icon: ClipboardList },
     { label: 'System Analytics', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Site Settings', href: '/admin/settings', icon: Settings },
+    { label: 'My Profile', href: '/admin/profile', icon: User },
   ];
 
   const navItems =
@@ -98,8 +100,8 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
                   <Link
                     to={item.href}
                     className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
-                        ? 'bg-blue-600 shadow-xl shadow-blue-500/20 text-white'
-                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 overflow-hidden'
+                      ? 'bg-blue-600 shadow-xl shadow-blue-500/20 text-white'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 overflow-hidden'
                       }`}
                     title={isCollapsed ? item.label : undefined}
                   >

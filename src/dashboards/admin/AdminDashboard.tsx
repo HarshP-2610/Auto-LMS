@@ -10,6 +10,8 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
+  GraduationCap,
+  ClipboardList,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/common/StatCard';
@@ -254,16 +256,22 @@ export function AdminDashboard() {
                 Quick Actions
               </h2>
               <div className="space-y-3">
-                <Button className="w-full justify-start" asChild>
-                  <Link to="/admin/users">
-                    <Users className="w-4 h-4 mr-2" />
-                    Manage Users
+                <Button className="w-full justify-start h-11 rounded-xl" asChild>
+                  <Link to="/admin/students">
+                    <GraduationCap className="w-4 h-4 mr-3 text-blue-500" />
+                    Manage Students
                   </Link>
                 </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link to="/admin/courses">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Approve Courses
+                <Button variant="outline" className="w-full justify-start h-11 rounded-xl border-gray-100" asChild>
+                  <Link to="/admin/instructors">
+                    <Users className="w-4 h-4 mr-3 text-purple-500" />
+                    Manage Instructors
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start h-11 rounded-xl border-gray-100" asChild>
+                  <Link to="/admin/requests">
+                    <ClipboardList className="w-4 h-4 mr-3 text-emerald-500" />
+                    Process Requests
                   </Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start" asChild>

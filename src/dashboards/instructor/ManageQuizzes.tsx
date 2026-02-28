@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, FileQuestion, Clock, CheckCircle, Eye, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileQuestion, Clock, CheckCircle, Eye } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,11 +50,12 @@ export function ManageQuizzes() {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/courses/instructor/me', {
+      const response = await fetch('http://localhost:5000/api/courses/my-courses', {
         headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` },
       });
       if (response.ok) {
-        setCourses(await response.json());
+        const data = await response.json();
+        setCourses(data.data || []);
       }
     } catch (error) {
       console.error('Error fetching courses:', error);

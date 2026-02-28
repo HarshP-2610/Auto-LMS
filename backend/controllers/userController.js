@@ -28,6 +28,8 @@ const getUserProfile = async (req, res) => {
                 rating: user.rating,
                 numReviews: user.numReviews,
                 earnings: user.earnings,
+                adminLevel: user.adminLevel,
+                permissions: user.permissions,
                 createdAt: user.createdAt
             });
         } else {
@@ -83,7 +85,9 @@ const updateUserProfile = async (req, res) => {
                 instructorBio: updatedUser.instructorBio,
                 instructorTitle: updatedUser.instructorTitle,
                 expertise: updatedUser.expertise,
-                payoutSettings: updatedUser.payoutSettings
+                payoutSettings: updatedUser.payoutSettings,
+                adminLevel: updatedUser.adminLevel,
+                permissions: updatedUser.permissions
             });
         } else {
             res.status(404).json({ message: 'User not found' });

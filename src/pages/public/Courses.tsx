@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, X, ChevronDown, Loader2, Filter, BookOpen } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Loader2, Filter, BookOpen } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { CourseCard } from '@/components/common/CourseCard';
@@ -330,15 +330,6 @@ export function Courses() {
                 </span>{' '}
                 outstanding courses
               </p>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 hidden sm:inline">
-                  Sort by
-                </span>
-                <button className="flex items-center justify-between gap-3 px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700/80 shadow-sm transition-colors w-40">
-                  Most Popular
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                </button>
-              </div>
             </div>
 
             {/* Active Filters Tokens */}

@@ -34,11 +34,12 @@ import { InstructorProfile } from '@/dashboards/instructor/InstructorProfile';
 
 // Admin Dashboard
 import { AdminDashboard } from '@/dashboards/admin/AdminDashboard';
-import { ManageUsers } from '@/dashboards/admin/ManageUsers';
-import { ApproveCourses } from '@/dashboards/admin/ApproveCourses';
+import { ManageStudents } from '@/dashboards/admin/ManageStudents';
+import { ManageInstructors } from '@/dashboards/admin/ManageInstructors';
 import { PlatformAnalytics } from '@/dashboards/admin/PlatformAnalytics';
 import { SystemSettings } from '@/dashboards/admin/SystemSettings';
-import { PendingInstructors } from '@/dashboards/admin/PendingInstructors';
+import { AdminRequests } from '@/dashboards/admin/AdminRequests';
+import { AdminProfile } from '@/dashboards/admin/AdminProfile';
 
 export function AppRoutes() {
   return (
@@ -77,11 +78,12 @@ export function AppRoutes() {
 
       {/* Admin Dashboard Routes */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/users" element={<ManageUsers />} />
-      <Route path="/admin/courses" element={<ApproveCourses />} />
-      <Route path="/admin/pending-instructors" element={<PendingInstructors />} />
+      <Route path="/admin/students" element={<ManageStudents />} />
+      <Route path="/admin/instructors" element={<ManageInstructors />} />
+      <Route path="/admin/requests" element={<AdminRequests />} />
       <Route path="/admin/analytics" element={<PlatformAnalytics />} />
       <Route path="/admin/settings" element={<SystemSettings />} />
+      <Route path="/admin/profile" element={<AdminProfile />} />
 
       {/* 404 Route */}
       <Route path="*" element={<div className="min-h-screen flex items-center justify-center">

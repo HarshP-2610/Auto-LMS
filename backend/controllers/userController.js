@@ -5,7 +5,19 @@ const User = require('../models/User');
 // @access  Private
 const getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const user = await User.findById(req.user._id)
+            .populate({
+                path: 'enrolledCourses',
+                select: 'title thumbnail category difficulty duration instructor',
+                populate: {
+                    path: 'instructor',
+                    select: 'name avatar'
+                }
+            });
+
+        // Also fetch from separate Progress model
+        const Progress = require('../models/Progress');
+        const userProgress = await Progress.find({ user: req.user._id }).populate('course', 'title thumbnail category instructor');
 
         if (user) {
             res.json({
@@ -22,7 +34,7 @@ const getUserProfile = async (req, res) => {
                 expertise: user.expertise || [],
                 payoutSettings: user.payoutSettings || { method: 'PayPal', schedule: 'Monthly' },
                 enrolledCourses: user.enrolledCourses,
-                progress: user.progress,
+                progress: userProgress, // Use the new Progress model data
                 certificates: user.certificates,
                 taughtCourses: user.taughtCourses,
                 rating: user.rating,

@@ -16,15 +16,31 @@ import { Progress } from '@/components/ui/progress';
 import { useState, useEffect } from 'react';
 import {
   studentStats,
-  enrolledCourses,
-  quizResults,
   certificates,
 } from '@/data/mockData';
+import { Loader2 } from 'lucide-react';
 
 export function StudentDashboard() {
-  const [inProgressCourses, setInProgressCourses] = useState(enrolledCourses.filter((c) => !c.completed));
-  const [recentQuizzes, setRecentQuizzes] = useState(quizResults.slice(0, 3));
+  const [courses, setCourses] = useState<any[]>([]);
   const [userName, setUserName] = useState('');
+  const [stats, setStats] = useState({
+    totalEnrolled: 0,
+    completedCourses: 0,
+    inProgressCourses: 0,
+    certificatesEarned: 0,
+    averageProgress: 0,
+    weeklyProgress: [
+      { day: 'Mon', progress: 0 },
+      { day: 'Tue', progress: 0 },
+      { day: 'Wed', progress: 0 },
+      { day: 'Thu', progress: 0 },
+      { day: 'Fri', progress: 0 },
+      { day: 'Sat', progress: 0 },
+      { day: 'Sun', progress: 0 },
+    ]
+  });
+  const [recentQuizzes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -39,15 +55,61 @@ export function StudentDashboard() {
           if (res.ok) {
             const data = await res.json();
             setUserName(data.name || '');
-            // You can also map real data objects to state here for courses, progress etc.
+
+            // Map enrolled courses with their progress
+            const mappedCourses = (data.enrolledCourses || []).map((course: any) => {
+              const progressEntry = (data.progress || []).find((p: any) =>
+                (p.course._id || p.course) === course._id
+              );
+              return {
+                id: course._id,
+                courseId: course._id,
+                title: course.title,
+                instructor: course.instructor?.name || 'Instructor',
+                thumbnail: course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : `http://localhost:5000/uploads/${course.thumbnail}`,
+                progress: progressEntry ? progressEntry.percentComplete : 0,
+                completed: progressEntry ? progressEntry.percentComplete === 100 : false
+              };
+            });
+
+            setCourses(mappedCourses);
+
+            // Update stats
+            const completedCount = mappedCourses.filter((c: any) => c.completed).length;
+            const inProgressCount = mappedCourses.length - completedCount;
+            const avgProg = mappedCourses.length > 0
+              ? Math.round(mappedCourses.reduce((acc: number, c: any) => acc + c.progress, 0) / mappedCourses.length)
+              : 0;
+
+            setStats(prev => ({
+              ...prev,
+              totalEnrolled: mappedCourses.length,
+              completedCourses: completedCount,
+              inProgressCourses: inProgressCount,
+              certificatesEarned: (data.certificates || []).length,
+              averageProgress: avgProg
+            }));
           }
         }
       } catch (error) {
         console.error("Failed to fetch profile", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchProfile();
   }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout userRole="student">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+          <p className="text-gray-500 font-medium tracking-tight">Synchronizing your classroom...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout userRole="student">
@@ -74,26 +136,26 @@ export function StudentDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Enrolled Courses"
-            value={studentStats.totalEnrolled}
+            value={stats.totalEnrolled}
             icon={BookOpen}
             color="blue"
           />
           <StatCard
             title="Completed"
-            value={studentStats.completedCourses}
-            description={`${studentStats.inProgressCourses} in progress`}
+            value={stats.completedCourses}
+            description={`${stats.inProgressCourses} in progress`}
             icon={CheckCircle}
             color="green"
           />
           <StatCard
             title="Certificates"
-            value={studentStats.certificatesEarned}
+            value={stats.certificatesEarned}
             icon={Award}
             color="purple"
           />
           <StatCard
             title="Avg. Progress"
-            value={`${studentStats.averageProgress}%`}
+            value={`${stats.averageProgress}%`}
             trend="up"
             trendValue="+5% this week"
             icon={TrendingUp}
@@ -118,7 +180,7 @@ export function StudentDashboard() {
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
-              <ProgressChart data={studentStats.weeklyProgress} />
+              <ProgressChart data={stats.weeklyProgress} />
             </div>
 
             {/* Continue Learning */}
@@ -137,7 +199,7 @@ export function StudentDashboard() {
               </div>
 
               <div className="space-y-4">
-                {inProgressCourses.slice(0, 3).map((course) => (
+                {courses.filter(c => !c.completed).slice(0, 3).map((course) => (
                   <div
                     key={course.id}
                     className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -162,12 +224,15 @@ export function StudentDashboard() {
                       </div>
                     </div>
                     <Button size="sm" asChild>
-                      <Link to={`/courses/${course.courseId}`}>
+                      <Link to={`/student/knowledge/${course.courseId}`}>
                         <PlayCircle className="w-4 h-4" />
                       </Link>
                     </Button>
                   </div>
                 ))}
+                {courses.filter(c => !c.completed).length === 0 && (
+                  <p className="text-center text-gray-500 py-8">You don't have any courses in progress.</p>
+                )}
               </div>
             </div>
           </div>
@@ -197,14 +262,14 @@ export function StudentDashboard() {
                     >
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${result.passed
-                            ? 'bg-green-100 dark:bg-green-900/30'
-                            : 'bg-red-100 dark:bg-red-900/30'
+                          ? 'bg-green-100 dark:bg-green-900/30'
+                          : 'bg-red-100 dark:bg-red-900/30'
                           }`}
                       >
                         <FileQuestion
                           className={`w-5 h-5 ${result.passed
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
                             }`}
                         />
                       </div>
@@ -219,8 +284,8 @@ export function StudentDashboard() {
                       <div className="text-right">
                         <span
                           className={`text-sm font-bold ${result.passed
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
                             }`}
                         >
                           {result.score}%

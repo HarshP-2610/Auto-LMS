@@ -84,8 +84,41 @@ const deleteLesson = async (req, res) => {
     }
 };
 
+// @desc    Update lesson
+// @route   PUT /api/lessons/:id
+// @access  Private (Instructor)
+const updateLesson = async (req, res) => {
+    try {
+        let lesson = await Lesson.findById(req.params.id);
+
+        if (!lesson) {
+            return res.status(404).json({ success: false, message: 'Lesson not found' });
+        }
+
+        const course = await Course.findById(lesson.course);
+
+        // Check ownership
+        if (course.instructor.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ success: false, message: 'Not authorized to update this lesson' });
+        }
+
+        lesson = await Lesson.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true
+        });
+
+        res.status(200).json({
+            success: true,
+            data: lesson
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     addLesson,
     getCourseLessons,
-    deleteLesson
+    deleteLesson,
+    updateLesson
 };

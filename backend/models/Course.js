@@ -50,6 +50,10 @@ const courseSchema = new mongoose.Schema({
         enum: ['pending', 'published', 'rejected'],
         default: 'pending',
     },
+    enrolledStudents: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     createdAt: {
         type: Date,
         default: Date.now,

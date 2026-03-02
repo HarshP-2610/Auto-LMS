@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Users, PlayCircle, CheckCircle, ArrowRight } from 'lucide-react';
+import { Star, Clock, Users, PlayCircle, CheckCircle, ArrowRight, Award } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,12 +24,110 @@ interface CourseCardProps {
     totalLessons?: number;
     completed?: boolean;
   };
-  variant?: 'default' | 'progress' | 'compact';
+  variant?: 'default' | 'progress' | 'compact' | 'premium';
   showProgress?: boolean;
 }
 
 export function CourseCard({ course, variant = 'default', showProgress = false }: CourseCardProps) {
   const isProgressVariant = variant === 'progress' || showProgress;
+  const isPremium = variant === 'premium';
+
+  if (isPremium) {
+    return (
+      <div className="group relative bg-white dark:bg-neutral-900 rounded-[2.5rem] overflow-hidden border border-neutral-100 dark:border-neutral-800 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.08)] dark:shadow-[0_15px_40px_-15px_rgba(0,0,0,0.4)] transition-all duration-500 ease-out hover:-translate-y-3 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)]">
+        {/* Top Image Section */}
+        <div className="relative aspect-[16/11] overflow-hidden">
+          <img
+            src={course.thumbnail}
+            alt={course.title}
+            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-in-out"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+          {/* Floating Category Badge */}
+          <div className="absolute top-5 left-5 z-20">
+            <Badge className="bg-white/90 dark:bg-neutral-950/80 backdrop-blur-md text-neutral-900 dark:text-neutral-100 border-0 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] shadow-lg">
+              {course.category || 'Featured'}
+            </Badge>
+          </div>
+
+          {/* Price Pillar */}
+          {course.price !== undefined && (
+            <div className="absolute top-5 right-5 z-20">
+              <div className="bg-neutral-900 dark:bg-blue-600 text-white px-4 py-2 rounded-2xl font-black text-sm shadow-xl transform transition-all duration-300 group-hover:scale-110 group-hover:-rotate-3">
+                ${course.price}
+              </div>
+            </div>
+          )}
+
+          {/* Rating Hover Reveal */}
+          <div className="absolute bottom-5 left-5 z-20 transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-100">
+            <div className="flex items-center gap-1.5 bg-yellow-400 py-1.5 px-3 rounded-xl shadow-lg">
+              <Star className="w-3.5 h-3.5 fill-neutral-900 text-neutral-900" />
+              <span className="text-[11px] font-black text-neutral-900">{course.rating || '4.9'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="p-8 pt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex -space-x-2">
+              <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center ring-2 ring-white dark:ring-neutral-900">
+                <Users className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
+            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{course.enrolledStudents?.toLocaleString() || '1.2k'}+ Learners</span>
+          </div>
+
+          <h3 className="text-2xl font-black text-neutral-900 dark:text-neutral-50 leading-[1.2] mb-6 line-clamp-2 tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            {course.title}
+          </h3>
+
+          {/* Instructor & Action */}
+          <div className="flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800 pt-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700 flex items-center justify-center text-xs font-black text-neutral-600 dark:text-neutral-300 shadow-inner group-hover:shadow-none group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                {(typeof course.instructor === 'string' ? course.instructor[0] : course.instructor.name[0])}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1 text-blue-600/0 group-hover:text-blue-600 transition-all">Verified Tutor</span>
+                <span className="text-sm font-bold text-neutral-700 dark:text-neutral-300 tracking-wide">
+                  {typeof course.instructor === 'string' ? course.instructor : course.instructor.name}
+                </span>
+              </div>
+            </div>
+
+            <Link
+              to={isProgressVariant ? `/student/knowledge/${course.id}` : `/courses/${course.id}`}
+              className="flex items-center justify-center w-12 h-12 rounded-2xl bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white hover:bg-neutral-900 dark:hover:bg-white hover:text-white dark:hover:text-neutral-900 transition-all duration-300 group/btn"
+            >
+              {isProgressVariant ? (
+                <PlayCircle className="w-6 h-6" />
+              ) : (
+                <ArrowRight className="w-5 h-5 transform group-hover/btn:translate-x-0.5 transition-transform" />
+              )}
+            </Link>
+          </div>
+        </div>
+
+        {/* Bottom Reveal Details Strip */}
+        <div className="px-8 pb-6 transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 delay-200">
+          <div className="flex items-center gap-5 text-neutral-400">
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest">
+              <Clock className="w-3.5 h-3.5" />
+              {course.duration || '12h Access'}
+            </div>
+            <div className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700" />
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest">
+              <Award className="w-3.5 h-3.5" />
+              Certification
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group bg-white dark:bg-gray-900/50 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800/60 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm">
@@ -150,7 +248,7 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
                 : 'rounded-xl h-11 px-6 group/btn border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
             }
           >
-            <Link to={`/courses/${course.id}`} className="flex items-center gap-2 font-semibold">
+            <Link to={isProgressVariant ? `/student/knowledge/${course.id}` : `/courses/${course.id}`} className="flex items-center gap-2 font-semibold">
               {isProgressVariant ? (
                 <>
                   <PlayCircle className="w-5 h-5" />

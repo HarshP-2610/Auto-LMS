@@ -30,9 +30,10 @@ interface CreateLessonModalProps {
     onClose: () => void;
     onSuccess?: () => void;
     initialCourseId?: string;
+    editingLesson?: any;
 }
 
-export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId }: CreateLessonModalProps) {
+export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId, editingLesson }: CreateLessonModalProps) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [courses, setCourses] = useState<Course[]>([]);
@@ -45,11 +46,17 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
     useEffect(() => {
         if (isOpen) {
             fetchMyCourses();
-            if (initialCourseId) {
+            if (editingLesson) {
+                setFormData({
+                    course: editingLesson.course?._id || editingLesson.course || initialCourseId || '',
+                    title: editingLesson.title || '',
+                    description: editingLesson.description || '',
+                });
+            } else if (initialCourseId) {
                 setFormData(prev => ({ ...prev, course: initialCourseId }));
             }
         }
-    }, [isOpen, initialCourseId]);
+    }, [isOpen, initialCourseId, editingLesson]);
 
     const fetchMyCourses = async () => {
         try {
@@ -82,8 +89,12 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
         setLoading(true);
         try {
             const token = localStorage.getItem('userToken');
-            const res = await fetch('http://localhost:5000/api/lessons', {
-                method: 'POST',
+            const url = editingLesson
+                ? `http://localhost:5000/api/lessons/${editingLesson._id}`
+                : 'http://localhost:5000/api/lessons';
+
+            const res = await fetch(url, {
+                method: editingLesson ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -94,7 +105,7 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
             const data = await res.json();
 
             if (res.ok) {
-                toast.success('Lesson container created successfully!');
+                toast.success(editingLesson ? 'Lesson updated successfully!' : 'Lesson container created successfully!');
                 onSuccess?.();
                 onClose();
                 // Reset form
@@ -105,7 +116,7 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
                 });
                 setStep(1);
             } else {
-                toast.error(data.message || 'Failed to add lesson');
+                toast.error(data.message || 'Failed to process lesson');
             }
         } catch (error) {
             toast.error('Something went wrong');
@@ -140,8 +151,12 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
                             <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                                 <Layers className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                             </div>
-                            <h4 className="font-medium text-gray-900 dark:text-white mt-2">Lesson Container</h4>
-                            <p className="text-sm text-gray-500 max-w-[300px]">Create a section for your course. You can add specific topics inside this later.</p>
+                            <h4 className="font-medium text-gray-900 dark:text-white mt-2">
+                                {editingLesson ? 'Update Section' : 'Lesson Container'}
+                            </h4>
+                            <p className="text-sm text-gray-500 max-w-[300px]">
+                                {editingLesson ? 'Modify the properties of this curriculum section.' : 'Create a section for your course. You can add specific topics inside this later.'}
+                            </p>
                         </div>
                     </div>
                 );
@@ -191,7 +206,7 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
                         </div>
                         <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl">
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>This will create a new section. You can then add specific topics (videos/content) inside it.</span>
+                            <span>This will {editingLesson ? 'update' : 'create'} a section. You can then add specific topics (videos/content) inside it.</span>
                         </div>
                     </div>
                 );
@@ -215,8 +230,8 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
                         ))}
                     </div>
                     <DialogTitle className="text-2xl font-bold tracking-tight">
-                        {step === 1 && 'Placement'}
-                        {step === 2 && 'Section Details'}
+                        {step === 1 && (editingLesson ? 'Edit Placement' : 'Placement')}
+                        {step === 2 && (editingLesson ? 'Edit Details' : 'Section Details')}
                         {step === 3 && 'Final Review'}
                     </DialogTitle>
                 </DialogHeader>
@@ -248,7 +263,7 @@ export function CreateLessonModal({ isOpen, onClose, onSuccess, initialCourseId 
                             disabled={loading}
                             className="flex-1 sm:flex-none bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 ml-auto font-semibold h-11 px-8 shadow-lg shadow-indigo-600/20"
                         >
-                            {loading ? 'Creating...' : 'Create Lesson'}
+                            {loading ? (editingLesson ? 'Updating...' : 'Creating...') : (editingLesson ? 'Update Lesson' : 'Create Lesson')}
                         </Button>
                     )}
                 </DialogFooter>

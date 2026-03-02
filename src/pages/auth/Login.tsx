@@ -47,7 +47,7 @@ export function Login() {
     e.preventDefault();
     if (validateForm()) {
       try {
-        const res = await fetch('http://localhost:5000/api/auth/login', {
+        const res = await fetch('http://localhost:5000/api/auth/student-login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

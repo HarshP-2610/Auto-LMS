@@ -7,6 +7,13 @@ const connectDB = require('./config/db');
 // Load env vars
 dotenv.config();
 
+// Ensure uploads directory exists
+const fs = require('fs');
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
+
 // Connect to database
 connectDB().then(() => {
     const seedAdmin = require('./seeders/adminSeeder');
@@ -35,6 +42,7 @@ app.use('/api/lessons', require('./routes/lessonRoutes'));
 app.use('/api/topics', require('./routes/topicRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/quizzes', require('./routes/quizRoutes'));
+app.use('/api/progress', require('./routes/progressRoutes'));
 
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 

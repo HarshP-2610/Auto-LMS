@@ -16,7 +16,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { CourseCard } from '@/components/common/CourseCard';
 import { Button } from '@/components/ui/button';
-import { courses, testimonials, howItWorks } from '@/data/mockData';
+import { testimonials, howItWorks } from '@/data/mockData';
 
 // Hero Section
 function Hero() {
@@ -116,25 +116,62 @@ function Hero() {
 
 // Featured Courses Section
 function FeaturedCourses() {
-  const featuredCourses = courses.slice(0, 4);
+  const [featuredCourses, setFeaturedCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPopular = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/courses/popular');
+        const data = await res.json();
+        if (data.success) {
+          setFeaturedCourses(data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching popular courses:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPopular();
+  }, []);
+
+  if (loading && featuredCourses.length === 0) {
+    return (
+      <section className="py-20 lg:py-32 bg-gray-50 dark:bg-gray-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="h-4 w-32 bg-gray-200 dark:bg-gray-800 rounded mb-4" />
+            <div className="h-8 w-64 bg-gray-200 dark:bg-gray-800 rounded mb-12" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="aspect-[16/10] bg-gray-200 dark:bg-gray-800 rounded-3xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="py-20 lg:py-32 bg-gray-50 dark:bg-gray-950">
+    <section className="py-20 lg:py-32 bg-gray-50 dark:bg-gray-950 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
-          <div>
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+          <div className="relative">
+            <div className="absolute -top-10 -left-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 px-4 py-1.5 rounded-full">
               Featured Courses
             </span>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mt-2">
-              Most Popular Courses
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white mt-6 tracking-tight">
+              Most Popular <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">Courses</span>
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-4 max-w-xl">
+            <p className="text-gray-600 dark:text-gray-400 mt-6 max-w-xl text-lg leading-relaxed">
               Start your learning journey with our most enrolled courses. Handpicked by our
               experts for maximum impact.
             </p>
           </div>
-          <Button variant="outline" className="mt-6 md:mt-0" asChild>
+          <Button variant="outline" className="mt-8 md:mt-0 px-8 h-12 rounded-full border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900 transition-all font-semibold" asChild>
             <Link to="/courses">
               View All Courses
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -142,9 +179,14 @@ function FeaturedCourses() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative">
+          <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
           {featuredCourses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+            <CourseCard key={course?._id || course?.id} course={{
+              ...course,
+              id: course?._id || course?.id,
+              thumbnail: course?.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course?.thumbnail || 'no-image.jpg'}`
+            }} variant="premium" />
           ))}
         </div>
       </div>
@@ -371,50 +413,6 @@ function TestimonialsSection() {
   );
 }
 
-// CTA Section
-function CTASection() {
-  return (
-    <section className="py-20 lg:py-32 bg-gray-900 dark:bg-black relative overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1920')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center">
-          <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
-            Ready to Start Learning?
-          </h2>
-          <p className="text-lg text-white/70 max-w-2xl mx-auto mb-10">
-            Join thousands of students already learning on our platform. Get unlimited access to
-            all courses with our premium plan.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              className="bg-white text-gray-900 hover:bg-white/90 px-8 py-6 text-lg rounded-full"
-              asChild
-            >
-              <Link to="/auth/register">Get Started Free</Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white/30 text-white hover:bg-white/10 px-8 py-6 text-lg rounded-full"
-              asChild
-            >
-              <Link to="/courses">Browse Courses</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // Main Home Component
 export function Home() {
   return (
@@ -426,7 +424,6 @@ export function Home() {
         <HowItWorks />
         <Features />
         <TestimonialsSection />
-        <CTASection />
       </main>
       <Footer />
     </div>

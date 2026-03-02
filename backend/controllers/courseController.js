@@ -1,4 +1,8 @@
 const Course = require('../models/Course');
+const User = require('../models/User');
+const Payment = require('../models/Payment');
+const fs = require('fs');
+const path = require('path');
 
 // @desc    Create new course
 // @route   POST /api/courses
@@ -143,11 +147,109 @@ const updateCourse = async (req, res) => {
     }
 };
 
+// @desc    Get popular courses (random 3)
+// @route   GET /api/courses/popular
+// @access  Public
+const getPopularCourses = async (req, res) => {
+    try {
+        console.log('Inside getPopularCourses handler');
+        // Use aggregate to get random samples if possible, or just limit
+        const courses = await Course.find({ status: 'published' })
+            .populate('instructor', 'name avatar')
+            .limit(3);
+
+        // If we want truly random each time we can use aggregation $sample
+        // For simplicity and since there might be few courses, just limit is fine or:
+        const randomCourses = await Course.aggregate([
+            { $match: { status: 'published' } },
+            { $sample: { size: 3 } }
+        ]);
+
+        // Need to populate instructor after aggregate
+        const populatedCourses = await Course.populate(randomCourses, { path: 'instructor', select: 'name avatar' });
+
+        res.status(200).json({ success: true, data: populatedCourses });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Enroll in a course (with payment storage)
+// @route   POST /api/courses/:id/enroll
+// @access  Private (Student)
+const enrollCourse = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        const user = await User.findById(req.user._id);
+
+        // Check if already enrolled
+        if (user.enrolledCourses.includes(req.params.id)) {
+            return res.status(400).json({ success: false, message: 'Already enrolled in this course' });
+        }
+
+        // 1. Create payment record
+        // Generate a simple unique transaction ID for now
+        const transactionId = `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const { paymentMethod, paymentDetails } = req.body;
+
+        const paymentRecord = await Payment.create({
+            student: req.user._id,
+            course: req.params.id,
+            amount: course.price,
+            paymentMethod: paymentMethod || 'card',
+            transactionId,
+            paymentDetails: paymentDetails || {}
+        });
+
+        // 2. Add course to user's enrolledCourses
+        user.enrolledCourses.push(req.params.id);
+
+        // Setup initial progress record in separate Progress model
+        const Progress = require('../models/Progress');
+        await Progress.create({
+            user: req.user._id,
+            course: req.params.id,
+            completedTopics: [],
+            percentComplete: 0
+        });
+
+        await user.save();
+
+        // 3. Add user to course's enrolledStudents
+        course.enrolledStudents.push(req.user._id);
+        await course.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Successfully enrolled!',
+            transactionId,
+            payment: paymentRecord,
+            course: course,
+            student: {
+                name: user.name,
+                email: user.email,
+                phone: user.phone || ''
+            }
+        });
+    } catch (error) {
+        const errorLog = `[${new Date().toISOString()}] Enrollment error: ${error.stack}\n`;
+        fs.appendFileSync(path.join(__dirname, '../error.log'), errorLog);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     createCourse,
     getCourses,
     getMyCourses,
     getCourse,
     deleteCourse,
-    updateCourse
+    updateCourse,
+    getPopularCourses,
+    enrollCourse
 };

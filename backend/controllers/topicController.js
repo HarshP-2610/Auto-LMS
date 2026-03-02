@@ -75,8 +75,42 @@ const deleteTopic = async (req, res) => {
     }
 };
 
+// @desc    Update topic
+// @route   PUT /api/topics/:id
+// @access  Private (Instructor)
+const updateTopic = async (req, res) => {
+    try {
+        let topic = await Topic.findById(req.params.id).populate({
+            path: 'lesson',
+            populate: { path: 'course' }
+        });
+
+        if (!topic) {
+            return res.status(404).json({ success: false, message: 'Topic not found' });
+        }
+
+        // Check ownership
+        if (topic.lesson.course.instructor.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ success: false, message: 'Not authorized to update this topic' });
+        }
+
+        topic = await Topic.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true
+        });
+
+        res.status(200).json({
+            success: true,
+            data: topic
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     addTopic,
     getLessonTopics,
-    deleteTopic
+    deleteTopic,
+    updateTopic
 };

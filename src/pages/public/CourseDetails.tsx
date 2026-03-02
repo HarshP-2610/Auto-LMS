@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Star,
   Users,
@@ -81,6 +81,7 @@ function TopicList({ lessonId }: { lessonId: string }) {
 
 export function CourseDetails() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [course, setCourse] = useState<any>(null);
   const [lessons, setLessons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -295,6 +296,14 @@ export function CourseDetails() {
                       <Button
                         size="lg"
                         className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-lg shadow-lg shadow-blue-500/25 active:scale-95 transition-all"
+                        onClick={() => {
+                          const token = localStorage.getItem('userToken');
+                          if (token) {
+                            navigate(`/checkout/confirmation/${id}`);
+                          } else {
+                            navigate('/auth/login', { state: { from: `/courses/${id}` } });
+                          }
+                        }}
                       >
                         Enroll Now
                       </Button>

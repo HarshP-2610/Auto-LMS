@@ -58,7 +58,7 @@ const registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role: requiredRole } = req.body;
 
     try {
         if (!email || !password) {
@@ -77,12 +77,56 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ message: 'Incorrect Password' });
         }
 
+        // Check if role matches requiredRole (if provided)
+        if (requiredRole && user.role !== requiredRole) {
+            let message = `You are not authorized to login here.`;
+            if (user.role === 'admin') message = "Admin Not Login Here Go to Admin Login";
+            else if (user.role === 'instructor') message = "Instructor Not Login Here Go to Instructor Login";
+            else if (user.role === 'student') message = "Student Not Login Here Go to Student Login";
+
+            return res.status(403).json({ message });
+        }
+
         res.json({
             _id: user._id,
             name: user.name,
             email: user.email,
             role: user.role,
             adminLevel: user.adminLevel,
+            token: generateToken(user._id)
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Authenticate a student specifically
+// @route   POST /api/auth/student-login
+// @access  Public
+const studentLogin = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email, role: 'student' }).select('+password');
+        if (!user) {
+            // Check if user exists with other role for better message
+            const otherUser = await User.findOne({ email });
+            if (otherUser) {
+                let message = "You are not a student.";
+                if (otherUser.role === 'admin') message = "Admin Not Login Here Go to Admin Login";
+                else if (otherUser.role === 'instructor') message = "Instructor Not Login Here Go to Instructor Login";
+                return res.status(403).json({ message });
+            }
+            return res.status(401).json({ message: 'Invalid Email' });
+        }
+
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) return res.status(401).json({ message: 'Incorrect Password' });
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
             token: generateToken(user._id)
         });
     } catch (error) {
@@ -103,7 +147,7 @@ const instructorLogin = async (req, res) => {
             return res.status(400).json({ message: 'Please provide email and password' });
         }
 
-        // 1. Check if they exist in instructors collection (User model with role instructor)
+        // 1. Check if they exist as an instructor
         const user = await User.findOne({ email, role: 'instructor' }).select('+password');
 
         if (user) {
@@ -121,14 +165,20 @@ const instructorLogin = async (req, res) => {
             }
         }
 
+        // Check if user exists with other role
+        const otherUser = await User.findOne({ email });
+        if (otherUser) {
+            let message = "You are not an instructor.";
+            if (otherUser.role === 'admin') message = "Admin Not Login Here Go to Admin Login";
+            else if (otherUser.role === 'student') message = "Student Not Login Here Go to Student Login";
+            return res.status(403).json({ message });
+        }
+
         // 2. Check if they are in pending applications
         const pendingApp = await InstructorApplication.findOne({ email }).select('+password');
         if (pendingApp) {
-            // Check password just in case, but really any pending means under review
             const isMatch = await pendingApp.matchPassword(password);
-            if (!isMatch) {
-                return res.status(401).json({ message: 'Incorrect Password' });
-            }
+            if (!isMatch) return res.status(401).json({ message: 'Incorrect Password' });
             return res.status(403).json({ message: 'Your application is under review.' });
         }
 
@@ -144,4 +194,37 @@ const instructorLogin = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, instructorLogin };
+// @desc    Authenticate an admin specifically
+// @route   POST /api/auth/admin-login
+// @access  Public
+const adminLogin = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email, role: 'admin' }).select('+password');
+        if (!user) {
+            const otherUser = await User.findOne({ email });
+            if (otherUser) {
+                let message = "You are not an administrator.";
+                if (otherUser.role === 'instructor') message = "Instructor Not Login Here Go to Instructor Login";
+                else if (otherUser.role === 'student') message = "Student Not Login Here Go to Student Login";
+                return res.status(403).json({ message });
+            }
+            return res.status(401).json({ message: 'Invalid Email' });
+        }
+
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) return res.status(401).json({ message: 'Incorrect Password' });
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            token: generateToken(user._id)
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { registerUser, loginUser, studentLogin, instructorLogin, adminLogin };

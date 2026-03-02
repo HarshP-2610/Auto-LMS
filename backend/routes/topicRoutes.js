@@ -3,7 +3,8 @@ const router = express.Router();
 const {
     addTopic,
     getLessonTopics,
-    deleteTopic
+    deleteTopic,
+    updateTopic
 } = require('../controllers/topicController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -13,6 +14,7 @@ router.route('/')
 router.get('/lesson/:lessonId', getLessonTopics);
 
 router.route('/:id')
+    .put(protect, updateTopic)
     .delete(protect, deleteTopic);
 
 module.exports = router;

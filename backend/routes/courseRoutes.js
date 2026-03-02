@@ -6,15 +6,21 @@ const {
     getMyCourses,
     getCourse,
     deleteCourse,
-    updateCourse
+    updateCourse,
+    getPopularCourses,
+    enrollCourse
 } = require('../controllers/courseController');
 const { protect } = require('../middleware/authMiddleware');
+
+router.get('/popular', getPopularCourses);
+router.get('/my-courses', protect, getMyCourses);
 
 router.route('/')
     .get(getCourses)
     .post(protect, createCourse);
 
-router.get('/my-courses', protect, getMyCourses);
+router.route('/:id/enroll')
+    .post(protect, enrollCourse);
 
 router.route('/:id')
     .get(getCourse)

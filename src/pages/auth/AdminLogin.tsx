@@ -45,7 +45,7 @@ export function AdminLogin() {
     setLoginError('');
     if (validateForm()) {
       try {
-        const response = await fetch('http://localhost:5000/api/auth/login', {
+        const response = await fetch('http://localhost:5000/api/auth/admin-login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -54,10 +54,6 @@ export function AdminLogin() {
         const data = await response.json();
 
         if (response.ok) {
-          if (data.role !== 'admin') {
-            setLoginError('Access denied: You are not an administrator.');
-            return;
-          }
           localStorage.setItem('userToken', data.token);
           localStorage.setItem('userData', JSON.stringify(data));
           window.location.href = '/admin/dashboard';
@@ -164,10 +160,18 @@ export function AdminLogin() {
           <div className="mt-8 pt-6 border-t border-gray-700">
             <p className="text-center text-sm text-gray-400 mb-4">Not an admin?</p>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700" asChild>
+              <Button
+                variant="outline"
+                className="flex-1 bg-gray-700/30 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-500 transition-all duration-200"
+                asChild
+              >
                 <Link to="/auth/login">Student</Link>
               </Button>
-              <Button variant="outline" className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700" asChild>
+              <Button
+                variant="outline"
+                className="flex-1 bg-gray-700/30 border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-500 transition-all duration-200"
+                asChild
+              >
                 <Link to="/auth/instructor-login">Instructor</Link>
               </Button>
             </div>

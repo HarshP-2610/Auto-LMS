@@ -133,7 +133,7 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
 
           {/* Desktop Navigation */}
           <div className={`hidden lg:flex items-center gap-6 xl:gap-8 ${isDashboard ? 'mr-auto ml-8' : ''}`}>
-            {(!isDashboard || activeRole === 'instructor') &&
+            {(!isDashboard || activeRole === 'instructor' || activeRole === 'student') &&
               navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -291,7 +291,7 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
         {isMobileMenuOpen && (
           <div className="lg:hidden py-6 animate-in slide-in-from-top duration-300">
             <div className="flex flex-col gap-2">
-              {(!isDashboard || activeRole === 'instructor') &&
+              {(!isDashboard || activeRole === 'instructor' || activeRole === 'student') &&
                 navLinks.map((link) => (
                   <Link
                     key={link.href}

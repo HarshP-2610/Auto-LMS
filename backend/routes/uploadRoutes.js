@@ -28,17 +28,46 @@ function checkFileType(file, cb) {
     }
 }
 
-const upload = multer({
+function checkVideoFileType(file, cb) {
+    const filetypes = /mp4|webm|mkv|mov|avi/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+        return cb(null, true);
+    } else {
+        cb('Videos only!');
+    }
+}
+
+const uploadImage = multer({
     storage,
     fileFilter: function (req, file, cb) {
         checkFileType(file, cb);
     },
 });
 
-router.post('/', protect, upload.single('image'), (req, res) => {
+const uploadVideo = multer({
+    storage,
+    fileFilter: function (req, file, cb) {
+        checkVideoFileType(file, cb);
+    },
+});
+
+router.post('/image', protect, uploadImage.single('image'), (req, res) => {
     res.send({
         message: 'Image uploaded',
-        imagePath: `/${req.file.path.replace(/\\/g, '/')}`,
+        imagePath: `${req.file.filename}`,
+    });
+});
+
+router.post('/video', protect, uploadVideo.single('video'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send({ message: 'Please upload a video file' });
+    }
+    res.send({
+        message: 'Video uploaded',
+        videoPath: `${req.file.filename}`,
     });
 });
 

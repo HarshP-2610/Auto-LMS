@@ -33,6 +33,8 @@ export function ManageLessons() {
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [topicsMap, setTopicsMap] = useState<Record<string, any[]>>({});
+  const [editingLesson, setEditingLesson] = useState<any>(null);
+  const [editingTopic, setEditingTopic] = useState<any>(null);
 
   useEffect(() => {
     fetchCourses();
@@ -131,6 +133,17 @@ export function ManageLessons() {
     }
   };
 
+  const handleEditLesson = (lesson: any) => {
+    setEditingLesson(lesson);
+    setIsLessonModalOpen(true);
+  };
+
+  const handleEditTopic = (topic: any, lessonId: string) => {
+    setActiveLessonId(lessonId);
+    setEditingTopic(topic);
+    setIsTopicModalOpen(true);
+  };
+
   const handleExpandLesson = (lessonId: string) => {
     if (expandedLesson === lessonId) {
       setExpandedLesson(null);
@@ -142,7 +155,13 @@ export function ManageLessons() {
 
   const openAddTopic = (lessonId: string) => {
     setActiveLessonId(lessonId);
+    setEditingTopic(null);
     setIsTopicModalOpen(true);
+  };
+
+  const openAddLesson = () => {
+    setEditingLesson(null);
+    setIsLessonModalOpen(true);
   };
 
   const filteredLessons = lessons.filter((lesson) =>
@@ -165,7 +184,7 @@ export function ManageLessons() {
             </p>
           </div>
           <Button
-            onClick={() => setIsLessonModalOpen(true)}
+            onClick={openAddLesson}
             className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -252,7 +271,12 @@ export function ManageLessons() {
                         <Plus className="w-3.5 h-3.5 mr-1" />
                         Topic
                       </Button>
-                      <Button variant="ghost" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => handleEditLesson(lesson)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
@@ -304,7 +328,12 @@ export function ManageLessons() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-1 opacity-0 group-hover/topic:opacity-100 transition-opacity">
-                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => handleEditTopic(topic, lesson._id)}
+                                >
                                   <Edit className="w-3 h-3" />
                                 </Button>
                                 <Button
@@ -360,6 +389,7 @@ export function ManageLessons() {
           onClose={() => setIsLessonModalOpen(false)}
           onSuccess={() => fetchLessons(selectedCourseId)}
           initialCourseId={selectedCourseId}
+          editingLesson={editingLesson}
         />
 
         {/* Create Topic Modal */}
@@ -371,6 +401,7 @@ export function ManageLessons() {
           }}
           lessonId={activeLessonId || ''}
           lessonTitle={lessons.find((l: any) => l._id === activeLessonId)?.title || 'this section'}
+          editingTopic={editingTopic}
         />
       </div>
     </DashboardLayout>

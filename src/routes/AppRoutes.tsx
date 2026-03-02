@@ -6,6 +6,9 @@ import { Courses } from '@/pages/public/Courses';
 import { CourseDetails } from '@/pages/public/CourseDetails';
 import { About } from '@/pages/public/About';
 import { Contact } from '@/pages/public/Contact';
+import { CourseConfirmation } from '@/pages/checkout/CourseConfirmation';
+import { PaymentPage } from '@/pages/checkout/PaymentPage';
+import { PaymentSuccess } from '@/pages/checkout/PaymentSuccess';
 
 // Auth Pages
 import { Login } from '@/pages/auth/Login';
@@ -23,6 +26,7 @@ import { QuizPage } from '@/dashboards/student/QuizPage';
 import { Certificates } from '@/dashboards/student/Certificates';
 import { StudentProfile } from '@/dashboards/student/StudentProfile';
 import { QuizzesList } from '@/dashboards/student/QuizzesList';
+import { CourseLearning } from '@/dashboards/student/CourseLearning';
 
 // Instructor Dashboard
 import { InstructorDashboard } from '@/dashboards/instructor/InstructorDashboard';
@@ -50,6 +54,9 @@ export function AppRoutes() {
       <Route path="/courses/:id" element={<CourseDetails />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/checkout/confirmation/:id" element={<CourseConfirmation />} />
+      <Route path="/checkout/payment/:id" element={<PaymentPage />} />
+      <Route path="/checkout/success" element={<PaymentSuccess />} />
 
       {/* Auth Routes */}
       <Route path="/auth/login" element={<Login />} />
@@ -67,6 +74,7 @@ export function AppRoutes() {
       <Route path="/student/quiz/:id" element={<QuizPage />} />
       <Route path="/student/certificates" element={<Certificates />} />
       <Route path="/student/profile" element={<StudentProfile />} />
+      <Route path="/student/knowledge/:id" element={<CourseLearning />} />
 
       {/* Instructor Dashboard Routes */}
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />

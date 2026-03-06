@@ -224,7 +224,9 @@ export function ManageCourses() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : course.thumbnail}
+                            src={course.thumbnail === 'no-image.jpg'
+                              ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
+                              : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)}
                             alt={course.title}
                             className="w-12 h-8 object-cover rounded"
                           />

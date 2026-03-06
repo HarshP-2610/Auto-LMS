@@ -1,3 +1,4 @@
+// AppRoutes.tsx handles the main routing for the application.
 import { Routes, Route } from 'react-router-dom';
 
 // Public Pages
@@ -27,12 +28,14 @@ import { Certificates } from '@/dashboards/student/Certificates';
 import { StudentProfile } from '@/dashboards/student/StudentProfile';
 import { QuizzesList } from '@/dashboards/student/QuizzesList';
 import { CourseLearning } from '@/dashboards/student/CourseLearning';
+import { QuizResultView } from '@/dashboards/student/QuizResultView';
 
 // Instructor Dashboard
 import { InstructorDashboard } from '@/dashboards/instructor/InstructorDashboard';
 import { ManageCourses } from '@/dashboards/instructor/ManageCourses';
 import { ManageLessons } from '@/dashboards/instructor/ManageLessons';
 import { ManageQuizzes } from '@/dashboards/instructor/ManageQuizzes';
+import { InstructorStudents } from '@/dashboards/instructor/InstructorStudents';
 import { InstructorAnalytics } from '@/dashboards/instructor/InstructorAnalytics';
 import { InstructorProfile } from '@/dashboards/instructor/InstructorProfile';
 
@@ -72,6 +75,7 @@ export function AppRoutes() {
       <Route path="/student/courses" element={<MyCourses />} />
       <Route path="/student/quizzes" element={<QuizzesList />} />
       <Route path="/student/quiz/:id" element={<QuizPage />} />
+      <Route path="/student/quiz-result/:id" element={<QuizResultView />} />
       <Route path="/student/certificates" element={<Certificates />} />
       <Route path="/student/profile" element={<StudentProfile />} />
       <Route path="/student/knowledge/:id" element={<CourseLearning />} />
@@ -81,6 +85,7 @@ export function AppRoutes() {
       <Route path="/instructor/courses" element={<ManageCourses />} />
       <Route path="/instructor/lessons" element={<ManageLessons />} />
       <Route path="/instructor/quizzes" element={<ManageQuizzes />} />
+      <Route path="/instructor/students" element={<InstructorStudents />} />
       <Route path="/instructor/analytics" element={<InstructorAnalytics />} />
       <Route path="/instructor/profile" element={<InstructorProfile />} />
 

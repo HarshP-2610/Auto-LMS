@@ -66,7 +66,9 @@ export function StudentDashboard() {
                 courseId: course._id,
                 title: course.title,
                 instructor: course.instructor?.name || 'Instructor',
-                thumbnail: course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : `http://localhost:5000/uploads/${course.thumbnail}`,
+                thumbnail: course.thumbnail === 'no-image.jpg'
+                  ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
+                  : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`),
                 progress: progressEntry ? progressEntry.percentComplete : 0,
                 completed: progressEntry ? progressEntry.percentComplete === 100 : false
               };

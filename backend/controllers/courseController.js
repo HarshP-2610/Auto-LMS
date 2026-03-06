@@ -243,6 +243,71 @@ const enrollCourse = async (req, res) => {
     }
 };
 
+// @desc    Get all students enrolled in instructor's courses
+// @route   GET /api/courses/instructor/students
+// @access  Private (Instructor)
+const getInstructorStudents = async (req, res) => {
+    try {
+        const Progress = require('../models/Progress');
+        const CompletedQuiz = require('../models/CompletedQuiz');
+
+        // 1. Get all courses taught by this instructor
+        const myCourses = await Course.find({ instructor: req.user._id });
+        const courseIds = myCourses.map(c => c._id);
+
+        // 2. Find all students enrolled in any of these courses
+        const students = await User.find({
+            role: 'student',
+            enrolledCourses: { $in: courseIds }
+        }).select('name email avatar enrolledCourses');
+
+        // 3. For each student, get detailed info for instructor's courses
+        const studentsData = await Promise.all(students.map(async (student) => {
+            // Courses of this instructor that the student is enrolled in
+            const relevantCourseIds = student.enrolledCourses.filter(id =>
+                courseIds.some(cId => cId.toString() === id.toString())
+            );
+
+            const courseDetails = await Promise.all(relevantCourseIds.map(async (courseId) => {
+                const course = await Course.findById(courseId).select('title');
+
+                // Get progress for this course
+                const progress = await Progress.findOne({ user: student._id, course: courseId });
+
+                // Get completed quizzes for this course
+                const completedQuizzes = await CompletedQuiz.find({
+                    user: student._id,
+                    course: courseId
+                }).populate('quiz', 'title');
+
+                return {
+                    id: course._id,
+                    title: course.title,
+                    percentComplete: progress ? progress.percentComplete : 0,
+                    completedQuizzes: completedQuizzes.map(q => ({
+                        quizTitle: q.quiz?.title,
+                        score: q.score,
+                        passed: q.passed,
+                        date: q.completedAt
+                    }))
+                };
+            }));
+
+            return {
+                id: student._id,
+                name: student.name,
+                email: student.email,
+                avatar: student.avatar,
+                courses: courseDetails
+            };
+        }));
+
+        res.status(200).json({ success: true, data: studentsData });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     createCourse,
     getCourses,
@@ -251,5 +316,7 @@ module.exports = {
     deleteCourse,
     updateCourse,
     getPopularCourses,
-    enrollCourse
+    enrollCourse,
+    getInstructorStudents
 };
+

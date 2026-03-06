@@ -106,7 +106,7 @@ export function CourseConfirmation() {
                                 {/* Image Section */}
                                 <div className="md:col-span-2 relative h-full min-h-[250px]">
                                     <img
-                                        src={course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : `http://localhost:5000/uploads/${course.thumbnail}`}
+                                        src={course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)}
                                         className="absolute inset-0 w-full h-full object-cover"
                                         alt={course.title}
                                     />

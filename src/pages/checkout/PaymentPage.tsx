@@ -306,7 +306,7 @@ export function PaymentPage() {
                                 <div className="space-y-6">
                                     <div className="flex gap-4">
                                         <img
-                                            src={course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : `http://localhost:5000/uploads/${course.thumbnail}`}
+                                            src={course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)}
                                             className="w-20 h-20 rounded-2xl object-cover border border-slate-200 dark:border-slate-800"
                                             alt=""
                                         />

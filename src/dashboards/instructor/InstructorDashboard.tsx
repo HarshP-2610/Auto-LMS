@@ -172,7 +172,9 @@ export function InstructorDashboard() {
                     >
                       <div className="w-20 h-14 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
                         <img
-                          src={course.thumbnail}
+                          src={course.thumbnail === 'no-image.jpg'
+                            ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
+                            : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)}
                           alt={course.title}
                           className="w-full h-full object-cover"
                         />

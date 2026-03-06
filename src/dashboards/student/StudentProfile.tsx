@@ -18,6 +18,8 @@ export function StudentProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [joinedDate, setJoinedDate] = useState<string | null>(null);
   const [avatar, setAvatar] = useState('/no-photo.jpg');
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [formData, setFormData] = useState({
@@ -61,8 +63,30 @@ export function StudentProfile() {
     }
   };
 
+  const fetchTransactions = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      if (token) {
+        const res = await fetch('http://localhost:5000/api/payments/my-transactions', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setTransactions(data.data || []);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch transactions", error);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
+    fetchTransactions();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -136,6 +160,130 @@ export function StudentProfile() {
     } catch (error) {
       console.error("Upload error", error);
       setMessage({ type: 'error', text: 'Error uploading image' });
+    }
+  };
+
+  const handleDownloadReceipt = (payment: any) => {
+    const formattedDate = new Date(payment.createdAt).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const receiptHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Receipt - AutoLMS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; color: #0f172a; padding: 40px; }
+        .receipt { max-width: 700px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .receipt-header { background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; padding: 40px; text-align: center; }
+        .receipt-header h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 5px; }
+        .receipt-header p { opacity: 0.85; font-size: 14px; }
+        .receipt-header .logo { font-size: 36px; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px; }
+        .receipt-body { padding: 40px; }
+        .success-badge { display: inline-flex; align-items: center; gap: 8px; background: #ecfdf5; color: #059669; padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 700; margin-bottom: 30px; }
+        .section { margin-bottom: 30px; }
+        .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: #94a3b8; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f8fafc; }
+        .detail-row .label { font-size: 13px; color: #64748b; font-weight: 600; }
+        .detail-row .value { font-size: 13px; color: #0f172a; font-weight: 700; text-align: right; }
+        .total-row { display: flex; justify-content: space-between; padding: 18px 0; margin-top: 10px; border-top: 2px solid #e2e8f0; }
+        .total-row .label { font-size: 16px; font-weight: 900; color: #0f172a; }
+        .total-row .value { font-size: 28px; font-weight: 900; color: #2563eb; }
+        .receipt-footer { text-align: center; padding: 25px 40px; background: #f8fafc; border-top: 1px solid #f1f5f9; }
+        .receipt-footer p { font-size: 11px; color: #94a3b8; line-height: 1.8; }
+        .receipt-footer .brand { font-weight: 800; color: #2563eb; }
+        @media print {
+            body { padding: 0; background: white; }
+            .receipt { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="receipt-header">
+            <div class="logo">⊙ AutoLMS</div>
+            <h1>Payment Receipt</h1>
+            <p>Thank you for your purchase</p>
+        </div>
+        <div class="receipt-body">
+            <div class="success-badge">
+                ✓ Payment Successful
+            </div>
+
+            <div class="section">
+                <div class="section-title">Transaction Details</div>
+                <div class="detail-row">
+                    <span class="label">Transaction ID</span>
+                    <span class="value">${payment.transactionId}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Date & Time</span>
+                    <span class="value">${formattedDate}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Payment Method</span>
+                    <span class="value">${payment.paymentMethod === 'card' ? 'Credit/Debit Card' : 'UPI Transfer'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Status</span>
+                    <span class="value" style="color: #059669;">✓ ${payment.status.toUpperCase()}</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Course Details</div>
+                <div class="detail-row">
+                    <span class="label">Course Name</span>
+                    <span class="value">${payment.course?.title || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Category</span>
+                    <span class="value">${payment.course?.category || 'N/A'}</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Student Details</div>
+                <div class="detail-row">
+                    <span class="label">Name</span>
+                    <span class="value">${formData.name || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Email</span>
+                    <span class="value">${formData.email || 'N/A'}</span>
+                </div>
+            </div>
+
+            <div class="total-row">
+                <span class="label">Total Amount Paid</span>
+                <span class="value">$${payment.amount}</span>
+            </div>
+        </div>
+        <div class="receipt-footer">
+            <p>This is a computer-generated receipt and does not require a signature.</p>
+            <p>For support, contact us at <span class="brand">support@autolms.com</span></p>
+            <p style="margin-top: 10px;">© ${new Date().getFullYear()} <span class="brand">AutoLMS</span>. All rights reserved.</p>
+        </div>
+    </div>
+    <script>window.onload = function() { window.print(); }</script>
+</body>
+</html>`;
+
+    const blob = new Blob([receiptHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const newWindow = window.open(url, '_blank');
+    if (newWindow) {
+      newWindow.onafterprint = () => {
+        URL.revokeObjectURL(url);
+      };
     }
   };
 
@@ -383,6 +531,79 @@ export function StudentProfile() {
                     className="w-full px-4 py-3 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 transition-all disabled:opacity-80 resize-none min-h-[120px]"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 border border-neutral-200 dark:border-neutral-800 shadow-xl shadow-neutral-100 dark:shadow-none">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">Recent Transactions</h3>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">View and download your course purchase receipts</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {loadingTransactions ? (
+                  <div className="flex flex-col items-center justify-center py-10">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
+                    <p className="text-xs text-neutral-500 uppercase tracking-widest font-black">Syncing Ledger...</p>
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div className="text-center py-10 bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl border-2 border-dashed border-neutral-200 dark:border-neutral-700">
+                    <p className="text-neutral-500 font-bold italic">No transactions found</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-neutral-100 dark:border-neutral-800">
+                          <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-neutral-400">Course</th>
+                          <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-neutral-400">Date</th>
+                          <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-neutral-400">Amount</th>
+                          <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-neutral-400 text-right">Receipt</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        {transactions.map((tx) => (
+                          <tr key={tx._id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+                            <td className="py-4 pr-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-neutral-200 dark:bg-neutral-700">
+                                  <img
+                                    src={tx.course?.thumbnail?.startsWith('http') ? tx.course.thumbnail : `http://localhost:5000/uploads/${tx.course?.thumbnail || 'no-image.jpg'}`}
+                                    className="w-full h-full object-cover"
+                                    alt=""
+                                  />
+                                </div>
+                                <span className="text-sm font-bold text-neutral-900 dark:text-white truncate max-w-[200px]">{tx.course?.title || 'Unknown Course'}</span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 text-xs font-bold text-neutral-500">
+                              {new Date(tx.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="text-sm font-black text-blue-600 dark:text-blue-400">${tx.amount}</span>
+                            </td>
+                            <td className="py-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownloadReceipt(tx)}
+                                className="rounded-xl h-9 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold flex items-center gap-2 ml-auto"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span className="text-xs uppercase tracking-tight">PDF</span>
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
 

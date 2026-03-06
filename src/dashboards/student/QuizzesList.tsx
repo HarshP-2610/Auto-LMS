@@ -2,11 +2,68 @@ import { Link } from 'react-router-dom';
 import { FileQuestion, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { quizzes, quizResults } from '@/data/mockData';
+import { quizzes as mockQuizzes } from '@/data/mockData';
+import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export function QuizzesList() {
-  const attemptedQuizIds = quizResults.map((r) => r.quizId);
+  const [quizzesList, setQuizzesList] = useState<any[]>([]);
+  const [completedQuizzes, setCompletedQuizzes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchQuizzesAndResults = async () => {
+      try {
+        const [quizzesRes, resultsRes] = await Promise.all([
+          fetch('http://localhost:5000/api/quizzes', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
+          }),
+          fetch('http://localhost:5000/api/quizzes/completed/my-quizzes', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
+          })
+        ]);
+
+        if (quizzesRes.ok) {
+          const apiQuizzes = await quizzesRes.json();
+          const mappedApi = apiQuizzes.map((q: any) => ({
+            id: q._id,
+            courseId: q.course?._id || q.course,
+            courseTitle: q.course?.title || 'Unknown Course',
+            title: q.title,
+            duration: q.duration,
+            passingMarks: q.passingMarks,
+            totalQuestions: q.questions?.length || 0,
+            questions: q.questions
+          }));
+
+          if (mappedApi.length > 0) {
+            setQuizzesList(mappedApi);
+          } else {
+            setQuizzesList(mockQuizzes);
+          }
+        }
+
+        if (resultsRes.ok) {
+          const apiResults = await resultsRes.json();
+          setCompletedQuizzes(apiResults);
+        }
+      } catch (error) {
+        console.error('Failed to fetch quizzes or results:', error);
+        setQuizzesList(mockQuizzes);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuizzesAndResults();
+  }, []);
+
+  // Get unique latest result for each quiz
+  const latestResults = Array.from(
+    new Map(
+      completedQuizzes.map((item) => [item.quiz?._id || item.quiz, item])
+    ).values()
+  );
 
   return (
     <DashboardLayout userRole="student">
@@ -31,7 +88,7 @@ export function QuizzesList() {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Total Quizzes</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {quizzes.length}
+                  {loading ? '...' : quizzesList.length}
                 </p>
               </div>
             </div>
@@ -44,7 +101,7 @@ export function QuizzesList() {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Passed</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {quizResults.filter((r) => r.passed).length}
+                  {loading ? '...' : latestResults.filter((r) => r.passed).length}
                 </p>
               </div>
             </div>
@@ -57,7 +114,7 @@ export function QuizzesList() {
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Failed</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {quizResults.filter((r) => !r.passed).length}
+                  {loading ? '...' : latestResults.filter((r) => !r.passed).length}
                 </p>
               </div>
             </div>
@@ -72,9 +129,18 @@ export function QuizzesList() {
             </h2>
           </div>
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {quizzes.map((quiz) => {
-              const result = quizResults.find((r) => r.quizId === quiz.id);
-              const isAttempted = attemptedQuizIds.includes(quiz.id);
+            {loading ? (
+              <div className="p-12 text-center">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
+                <p className="text-gray-500">Fetching quizzes...</p>
+              </div>
+            ) : quizzesList.length === 0 ? (
+              <div className="p-12 text-center">
+                <p className="text-gray-500">No quizzes available at the moment.</p>
+              </div>
+            ) : quizzesList.map((quiz) => {
+              const result = latestResults.find((r) => (r.quiz?._id || r.quiz) === quiz.id);
+              const isAttempted = !!result;
 
               return (
                 <div
@@ -83,22 +149,20 @@ export function QuizzesList() {
                 >
                   <div className="flex items-start gap-4">
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                        isAttempted
-                          ? result?.passed
-                            ? 'bg-green-100 dark:bg-green-900/30'
-                            : 'bg-red-100 dark:bg-red-900/30'
-                          : 'bg-blue-100 dark:bg-blue-900/30'
-                      }`}
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isAttempted
+                        ? result?.passed
+                          ? 'bg-green-100 dark:bg-green-900/30'
+                          : 'bg-red-100 dark:bg-red-900/30'
+                        : 'bg-blue-100 dark:bg-blue-900/30'
+                        }`}
                     >
                       <FileQuestion
-                        className={`w-6 h-6 ${
-                          isAttempted
-                            ? result?.passed
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
-                            : 'text-blue-600 dark:text-blue-400'
-                        }`}
+                        className={`w-6 h-6 ${isAttempted
+                          ? result?.passed
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                          : 'text-blue-600 dark:text-blue-400'
+                          }`}
                       />
                     </div>
                     <div>
@@ -116,32 +180,34 @@ export function QuizzesList() {
                         <span>{quiz.totalQuestions} questions</span>
                         <span>Pass: {quiz.passingMarks}%</span>
                       </div>
-                      {isAttempted && result && (
-                        <div className="mt-2">
-                          <Badge
-                            variant={result.passed ? 'default' : 'destructive'}
-                            className={
-                              result.passed
-                                ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                                : ''
-                            }
-                          >
+                      {isAttempted && (
+                        <div className="mt-2 text-sm font-medium">
+                          <span className={result.passed ? 'text-green-600' : 'text-red-600'}>
                             {result.passed ? 'Passed' : 'Failed'} - {result.score}%
-                          </Badge>
+                          </span>
                         </div>
                       )}
                     </div>
                   </div>
+
                   <Button
                     asChild
                     variant={isAttempted ? 'outline' : 'default'}
-                    className={!isAttempted ? 'bg-gradient-to-r from-blue-600 to-purple-600' : ''}
+                    className={!isAttempted ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'border-blue-600 text-blue-600 hover:bg-blue-50'}
                   >
-                    <Link to={`/student/quiz/${quiz.id}`}>
-                      {isAttempted ? 'Retake Quiz' : 'Start Quiz'}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
+                    {isAttempted ? (
+                      <Link to={`/student/quiz-result/${result._id}`}>
+                        View Result
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
+                    ) : (
+                      <Link to={`/student/quiz/${quiz.id}`}>
+                        Start Quiz
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
+                    )}
                   </Button>
+
                 </div>
               );
             })}

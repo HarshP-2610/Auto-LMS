@@ -35,7 +35,9 @@ export function MyCourses() {
                 _id: course._id,
                 title: course.title,
                 instructor: course.instructor?.name || 'Instructor',
-                thumbnail: course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : `http://localhost:5000/uploads/${course.thumbnail}`,
+                thumbnail: course.thumbnail === 'no-image.jpg'
+                  ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
+                  : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`),
                 category: course.category,
                 difficulty: course.difficulty,
                 duration: course.duration,

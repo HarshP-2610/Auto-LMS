@@ -47,9 +47,11 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
     { label: 'My Courses', href: '/instructor/courses', icon: BookOpen },
     { label: 'Curriculum', href: '/instructor/lessons', icon: PlayCircle },
     { label: 'Assessments', href: '/instructor/quizzes', icon: FileText },
+    { label: 'Students', href: '/instructor/students', icon: GraduationCap },
     { label: 'Statistics', href: '/instructor/analytics', icon: TrendingUp },
     { label: 'Profile Settings', href: '/instructor/profile', icon: User },
   ];
+
 
   const adminNavItems: NavItem[] = [
     { label: 'Admin Panel', href: '/admin/dashboard', icon: ShieldCheck },

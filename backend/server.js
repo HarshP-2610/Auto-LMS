@@ -43,6 +43,7 @@ app.use('/api/topics', require('./routes/topicRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/quizzes', require('./routes/quizRoutes'));
 app.use('/api/progress', require('./routes/progressRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
 
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 

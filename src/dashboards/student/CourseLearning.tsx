@@ -8,12 +8,14 @@ import {
     ChevronLeft,
     HelpCircle,
     Layout,
-    Trophy
+    Trophy,
+    Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CertificateModal } from '@/components/certificate/CertificateModal';
 
 export function CourseLearning() {
     const { id } = useParams<{ id: string }>();
@@ -23,6 +25,9 @@ export function CourseLearning() {
     const [progress, setProgress] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [finalAssessment, setFinalAssessment] = useState<any>(null);
+    const [showCertificate, setShowCertificate] = useState(false);
+    const [userProfile, setUserProfile] = useState<any>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -42,25 +47,51 @@ export function CourseLearning() {
                 });
                 const progressData = await progressRes.json();
 
+                // Fetch User Profile for Certificate
+                const profileRes = await fetch('http://localhost:5000/api/users/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const profileData = await profileRes.json();
+                if (profileRes.ok) setUserProfile(profileData);
+
                 if (courseRes.ok && lessonsRes.ok) {
                     setCourse(courseData.data);
                     const allLessons = lessonsData.data;
 
-                    // Fetch topics for each lesson to build the full curriculum
-                    const lessonsWithTopics = await Promise.all(allLessons.map(async (lesson: any) => {
+                    // Fetch topics and quizzes for each lesson to build the full curriculum
+                    const lessonsWithContent = await Promise.all(allLessons.map(async (lesson: any) => {
                         const topicRes = await fetch(`http://localhost:5000/api/topics/lesson/${lesson._id}`);
                         const topicData = await topicRes.json();
-                        return { ...lesson, topics: topicData.data || [] };
+
+                        const quizRes = await fetch(`http://localhost:5000/api/quizzes?lessonId=${lesson._id}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const quizData = await quizRes.json();
+
+                        return {
+                            ...lesson,
+                            topics: topicData.data || [],
+                            quizzes: Array.isArray(quizData) ? quizData : []
+                        };
                     }));
 
-                    setLessons(lessonsWithTopics);
+                    setLessons(lessonsWithContent);
                     if (progressRes.ok) setProgress(progressData.data);
+
+                    // Fetch Final Assessment from the dedicated endpoint
+                    const finalRes = await fetch(`http://localhost:5000/api/final-assessments?courseId=${id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const finalData = await finalRes.json();
+                    if (finalRes.ok && finalData) {
+                        setFinalAssessment(finalData);
+                    }
 
                     // Set active topic: lastTopic from progress or first topic
                     let defaultTopic = null;
                     if (progressData.data?.lastTopic) {
-                        // Find the topic object in lessonsWithTopics
-                        for (const l of lessonsWithTopics) {
+                        // Find the topic object in lessonsWithContent
+                        for (const l of lessonsWithContent) {
                             const found = l.topics.find((t: any) => t._id === progressData.data.lastTopic);
                             if (found) {
                                 defaultTopic = found;
@@ -69,8 +100,8 @@ export function CourseLearning() {
                         }
                     }
 
-                    if (!defaultTopic && lessonsWithTopics.length > 0 && lessonsWithTopics[0].topics.length > 0) {
-                        defaultTopic = lessonsWithTopics[0].topics[0];
+                    if (!defaultTopic && lessonsWithContent.length > 0 && lessonsWithContent[0].topics.length > 0) {
+                        defaultTopic = lessonsWithContent[0].topics[0];
                     }
 
                     setActiveTopic(defaultTopic);
@@ -330,11 +361,119 @@ export function CourseLearning() {
                                             </div>
                                         </button>
                                     ))}
+                                    {lesson.quizzes?.map((quiz: any) => (
+                                        <Link
+                                            key={quiz._id}
+                                            to={`/student/quiz/${quiz._id}`}
+                                            className="w-full flex flex-col p-4 rounded-xl transition-all text-left bg-purple-600/10 hover:bg-purple-600/20 border border-purple-600/20 mt-1"
+                                        >
+                                            <div className="flex items-start gap-4">
+                                                <div className="mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center border border-purple-400 text-purple-400">
+                                                    <HelpCircle className="w-3 h-3 fill-current" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-bold leading-snug text-purple-200">
+                                                        {quiz.title}
+                                                    </p>
+                                                    <div className="flex items-center gap-3 mt-2">
+                                                        <span className="text-[10px] uppercase font-black tracking-widest text-purple-400">
+                                                            Section Assessment • {quiz.questions?.length || 0} Qs
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
                                 </div>
                             ))}
+
+                            {/* Final Assessment Section */}
+                            {finalAssessment && (
+                                <div className="mt-8 space-y-2">
+                                    <div className="px-4 py-3 bg-purple-600/10 rounded-xl flex items-center justify-between">
+                                        <span className="text-[11px] font-black uppercase tracking-widest text-purple-400 flex items-center gap-2">
+                                            <Trophy className="w-3.5 h-3.5" /> Course Final Step
+                                        </span>
+                                    </div>
+                                    <div className="relative group">
+                                        <Link
+                                            to={progress?.percentComplete >= 100 ? `/student/quiz/${finalAssessment._id}?type=final` : '#'}
+                                            onClick={(e) => {
+                                                if (progress?.percentComplete < 100) {
+                                                    e.preventDefault();
+                                                    toast.error("Complete all modules to unlock the Final Assessment");
+                                                }
+                                            }}
+                                            className={`w-full flex flex-col p-5 rounded-2xl transition-all text-left border-2 ${progress?.percentComplete >= 100
+                                                ? 'bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/10 hover:border-purple-500/50 cursor-pointer'
+                                                : 'bg-white/5 border-white/5 opacity-60 cursor-not-allowed'
+                                                }`}
+                                        >
+                                            <div className="flex items-start gap-4">
+                                                <div className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center border-2 ${progress?.percentComplete >= 100
+                                                    ? 'bg-purple-600 border-purple-400 text-white animate-pulse'
+                                                    : 'bg-white/5 border-white/10 text-neutral-600'
+                                                    }`}>
+                                                    <Trophy className="w-5 h-5" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className={`text-base font-black leading-tight ${progress?.percentComplete >= 100 ? 'text-white' : 'text-neutral-500'}`}>
+                                                            {finalAssessment.title}
+                                                        </p>
+                                                        {progress?.percentComplete < 100 && (
+                                                            <Badge variant="outline" className="text-[9px] uppercase font-black bg-white/5 border-white/10 text-neutral-600 h-5">
+                                                                Locked
+                                                            </Badge>
+                                                        )}
+                                                        {progress?.isCompleted && (
+                                                            <Badge className="bg-green-500/20 border-green-500/30 text-green-400 text-[9px] uppercase font-black h-5">
+                                                                Passed
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <p className={`text-[11px] mt-1 font-medium ${progress?.percentComplete >= 100 ? 'text-purple-300' : 'text-neutral-600'}`}>
+                                                        {progress?.percentComplete >= 100
+                                                            ? 'Unlimited attempts available. Pass to earn certificate.'
+                                                            : `Module progress: ${progress?.percentComplete || 0}%`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    </div>
+
+                                    {progress?.isCompleted && (
+                                        <div className="mt-4">
+                                            <Button
+                                                onClick={() => setShowCertificate(true)}
+                                                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black font-black uppercase text-xs tracking-widest py-6 rounded-2xl shadow-lg shadow-yellow-500/20 group transition-all duration-300"
+                                            >
+                                                <Award className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform" />
+                                                Get Your Certificate
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </ScrollArea>
                 </aside>
+
+                {userProfile && (
+                    <CertificateModal
+                        isOpen={showCertificate}
+                        onClose={() => setShowCertificate(false)}
+                        data={{
+                            studentName: userProfile.name,
+                            courseTitle: course?.title,
+                            instructorName: course?.instructor?.name || 'Auto-LMS Team',
+                            completionDate: progress?.completionDate
+                                ? new Date(progress.completionDate).toLocaleDateString()
+                                : new Date().toLocaleDateString(),
+                            certificateId: `CRT-${id?.slice(-6).toUpperCase() || 'NA'}-${userProfile._id.slice(-4).toUpperCase()}`
+                        }}
+                    />
+                )}
 
                 {!sidebarOpen && (
                     <Button

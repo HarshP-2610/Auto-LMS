@@ -90,8 +90,22 @@ const getMyProgress = async (req, res) => {
     }
 };
 
+// @desc    Get all certificates for a user
+// @route   GET /api/progress/certificates
+// @access  Private (Student)
+const getCertificates = async (req, res) => {
+    try {
+        const certificates = await Progress.find({ user: req.user._id, isCompleted: true })
+            .populate('course', 'title instructor thumbnail skills');
+        res.status(200).json({ success: true, data: certificates });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     markTopicComplete,
     getCourseProgress,
-    getMyProgress
+    getMyProgress,
+    getCertificates
 };

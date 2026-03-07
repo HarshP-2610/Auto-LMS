@@ -20,6 +20,7 @@ export function ManageQuizzes() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentQuizId, setCurrentQuizId] = useState<string | null>(null);
+  const [isFinalMode, setIsFinalMode] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -37,14 +38,28 @@ export function ManageQuizzes() {
 
   const fetchQuizzes = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/quizzes', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` },
-      });
-      if (response.ok) {
-        setQuizzes(await response.json());
+      const token = localStorage.getItem('userToken');
+
+      const [quizzesRes, finalsRes] = await Promise.all([
+        fetch('http://localhost:5000/api/quizzes', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch('http://localhost:5000/api/final-assessments/all', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ]);
+
+      if (quizzesRes.ok && finalsRes.ok) {
+        const quizzesData = await quizzesRes.json();
+        const finalsData = await finalsRes.json();
+
+        // Mark final ones so they show the 'Final' badge
+        const markedFinals = finalsData.map((f: any) => ({ ...f, isFinalAssessment: true }));
+
+        setQuizzes([...quizzesData, ...markedFinals]);
       }
     } catch (error) {
-      console.error('Error fetching quizzes:', error);
+      console.error('Error fetching assessments:', error);
     }
   };
 
@@ -71,6 +86,7 @@ export function ManageQuizzes() {
     setFormData({ title: '', course: '', duration: 15, passingMarks: 70, questions: [] });
     setIsEditing(false);
     setCurrentQuizId(null);
+    setIsFinalMode(false);
     setCreateDialogOpen(true);
   };
 
@@ -84,19 +100,24 @@ export function ManageQuizzes() {
     });
     setIsEditing(true);
     setCurrentQuizId(quiz._id);
+    setIsFinalMode(!!quiz.isFinalAssessment);
     setCreateDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this quiz?')) {
+  const handleDelete = async (id: string, isFinal: boolean) => {
+    if (confirm('Are you sure you want to delete this assessment?')) {
       try {
-        await fetch(`http://localhost:5000/api/quizzes/${id}`, {
+        const url = isFinal
+          ? `http://localhost:5000/api/final-assessments/${id}`
+          : `http://localhost:5000/api/quizzes/${id}`;
+
+        await fetch(url, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` },
         });
         fetchQuizzes();
       } catch (error) {
-        console.error('Error deleting quiz:', error);
+        console.error('Error deleting assessment:', error);
       }
     }
   };
@@ -125,10 +146,18 @@ export function ManageQuizzes() {
       return;
     }
     try {
-      const url = isEditing
-        ? `http://localhost:5000/api/quizzes/${currentQuizId}`
-        : 'http://localhost:5000/api/quizzes';
-      const method = isEditing ? 'PUT' : 'POST';
+      let url;
+      let method;
+
+      if (isFinalMode) {
+        url = 'http://localhost:5000/api/final-assessments';
+        method = 'POST'; // createOrUpdate handler for finals
+      } else {
+        url = isEditing
+          ? `http://localhost:5000/api/quizzes/${currentQuizId}`
+          : 'http://localhost:5000/api/quizzes';
+        method = isEditing ? 'PUT' : 'POST';
+      }
 
       const response = await fetch(url, {
         method,
@@ -144,10 +173,10 @@ export function ManageQuizzes() {
         fetchQuizzes();
       } else {
         const data = await response.json();
-        alert(data.message || 'Error saving quiz');
+        alert(data.message || 'Error saving assessment');
       }
     } catch (error) {
-      console.error('Error saving quiz:', error);
+      console.error('Error saving assessment:', error);
     }
   };
 
@@ -202,7 +231,14 @@ export function ManageQuizzes() {
                 <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
                   <FileQuestion className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <Badge variant="secondary">{quiz.questions?.length || 0} questions</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{quiz.questions?.length || 0} questions</Badge>
+                  {quiz.isFinalAssessment && (
+                    <Badge className="bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400">
+                      Final
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{quiz.title}</h3>
@@ -227,7 +263,7 @@ export function ManageQuizzes() {
                 <Button variant="outline" size="sm" onClick={() => handleOpenEdit(quiz)}>
                   <Edit className="w-4 h-4" />
                 </Button>
-                <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(quiz._id)}>
+                <Button variant="outline" size="sm" className="text-red-600" onClick={() => handleDelete(quiz._id, !!quiz.isFinalAssessment)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>

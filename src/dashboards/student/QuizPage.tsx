@@ -10,6 +10,8 @@ import { Loader2 } from 'lucide-react';
 
 export function QuizPage() {
   const { id } = useParams<{ id: string }>();
+  const isFinal = new URLSearchParams(window.location.search).get('type') === 'final';
+
   const [quiz, setQuiz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -24,7 +26,11 @@ export function QuizPage() {
   useEffect(() => {
     const fetchQuizDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/quizzes/${id}`, {
+        const url = isFinal
+          ? `http://localhost:5000/api/final-assessments/${id}`
+          : `http://localhost:5000/api/quizzes/${id}`;
+
+        const response = await fetch(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
         });
         if (response.ok) {
@@ -33,7 +39,7 @@ export function QuizPage() {
           const mappedQuiz = {
             id: data._id,
             title: data.title,
-            courseTitle: data.course?.title || 'Course Material',
+            courseTitle: data.course?.title || (isFinal ? 'Course Final Exam' : 'Course Material'),
             duration: data.duration,
             passingMarks: data.passingMarks,
             questions: data.questions.map((q: any) => ({
@@ -47,10 +53,12 @@ export function QuizPage() {
           setTimeLeft(mappedQuiz.duration * 60);
         } else {
           // Fallback to mock data if not found in API
-          const mockQuiz = mockQuizzes.find((q) => q.id === id);
-          if (mockQuiz) {
-            setQuiz(mockQuiz);
-            setTimeLeft(mockQuiz.duration * 60);
+          if (!isFinal) {
+            const mockQuiz = mockQuizzes.find((q) => q.id === id);
+            if (mockQuiz) {
+              setQuiz(mockQuiz);
+              setTimeLeft(mockQuiz.duration * 60);
+            }
           }
         }
       } catch (error) {
@@ -61,7 +69,7 @@ export function QuizPage() {
     };
 
     fetchQuizDetails();
-  }, [id]);
+  }, [id, isFinal]);
 
 
 
@@ -120,18 +128,21 @@ export function QuizPage() {
     const finalScore = Math.round((correctCount / quiz.questions.length) * 100);
 
     try {
-      // Map frontend selectedAnswers to backend expected format (ID: index)
-      // Since q.id is used in setSelectedAnswers and it corresponds to q._id from API
-      const response = await fetch('http://localhost:5000/api/quizzes/submit', {
+      const url = isFinal
+        ? 'http://localhost:5000/api/final-assessments/submit'
+        : 'http://localhost:5000/api/quizzes/submit';
+
+      const body = isFinal
+        ? { assessmentId: id, answers: selectedAnswers }
+        : { quizId: id, answers: selectedAnswers };
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('userToken')}`
         },
-        body: JSON.stringify({
-          quizId: id,
-          answers: selectedAnswers
-        })
+        body: JSON.stringify(body)
       });
 
       if (response.ok) {
@@ -140,15 +151,12 @@ export function QuizPage() {
         setScore(finalScore);
         setIsSubmitted(true);
       } else {
-
-        console.error('Failed to submit quiz');
-        // Still show the result locally even if backend fails? 
-        // Better to show error or retry.
+        console.error('Failed to submit assessment');
         setScore(finalScore);
         setIsSubmitted(true);
       }
     } catch (error) {
-      console.error('Error submitting quiz:', error);
+      console.error('Error submitting assessment:', error);
       setScore(finalScore);
       setIsSubmitted(true);
     }
@@ -222,7 +230,7 @@ export function QuizPage() {
               </Button>
               {completedResultId && (
                 <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                  <Link to={`/student/quiz-result/${completedResultId}`}>
+                  <Link to={`/student/quiz-result/${completedResultId}${isFinal ? '?type=final' : ''}`}>
                     View Detailed Result
                   </Link>
                 </Button>

@@ -5,11 +5,18 @@ const CompletedQuiz = require('../models/CompletedQuiz');
 exports.getQuizzes = async (req, res) => {
     try {
         let quizzes;
+        const { lessonId, courseId } = req.query;
         if (req.user.role === 'student') {
             const user = await require('../models/User').findById(req.user._id);
-            quizzes = await Quiz.find({ course: { $in: user.enrolledCourses } }).populate('course', 'title');
+            const query = { course: { $in: user.enrolledCourses } };
+            if (lessonId) query.lesson = lessonId;
+            if (courseId) query.course = courseId;
+            quizzes = await Quiz.find(query).populate('course', 'title');
         } else {
-            quizzes = await Quiz.find({ instructor: req.user._id }).populate('course', 'title');
+            const query = { instructor: req.user._id };
+            if (lessonId) query.lesson = lessonId;
+            if (courseId) query.course = courseId;
+            quizzes = await Quiz.find(query).populate('course', 'title');
         }
         res.json(quizzes);
     } catch (error) {
@@ -36,10 +43,11 @@ exports.getQuizDetails = async (req, res) => {
 
 exports.createQuiz = async (req, res) => {
     try {
-        const { title, course, duration, passingMarks, questions } = req.body;
+        const { title, course, lesson, duration, passingMarks, questions } = req.body;
         const newQuiz = new Quiz({
             title,
             course,
+            lesson: lesson || undefined,
             instructor: req.user._id,
             duration: duration || 15,
             passingMarks: passingMarks || 70,
@@ -102,6 +110,7 @@ exports.submitQuiz = async (req, res) => {
         });
 
         await completedQuiz.save();
+
         res.status(201).json(completedQuiz);
     } catch (error) {
         console.error('Submit Quiz Error:', error);

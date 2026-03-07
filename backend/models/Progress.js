@@ -22,6 +22,13 @@ const progressSchema = new mongoose.Schema({
     percentComplete: {
         type: Number,
         default: 0
+    },
+    isCompleted: {
+        type: Boolean,
+        default: false
+    },
+    completionDate: {
+        type: Date
     }
 }, {
     timestamps: true

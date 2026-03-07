@@ -7,13 +7,18 @@ import { Button } from '@/components/ui/button';
 
 export function QuizResultView() {
     const { id } = useParams<{ id: string }>();
+    const isFinal = new URLSearchParams(window.location.search).get('type') === 'final';
     const [result, setResult] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchResultDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/quizzes/completed/details/${id}`, {
+                const url = isFinal
+                    ? `http://localhost:5000/api/final-assessments/completed/details/${id}`
+                    : `http://localhost:5000/api/quizzes/completed/details/${id}`;
+
+                const response = await fetch(url, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
                 });
                 if (response.ok) {
@@ -28,7 +33,7 @@ export function QuizResultView() {
         };
 
         fetchResultDetails();
-    }, [id]);
+    }, [id, isFinal]);
 
     if (loading) {
         return (

@@ -13,6 +13,7 @@ import {
   FileText,
   Layers,
   Clock,
+  Trophy
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { CreateLessonModal } from './CreateLessonModal';
 import { CreateTopicModal } from './CreateTopicModal';
+import { CreateAssessmentModal } from './CreateAssessmentModal';
+import { HelpCircle } from 'lucide-react';
 
 export function ManageLessons() {
   const [coursesList, setCoursesList] = useState<any[]>([]);
@@ -31,10 +34,15 @@ export function ManageLessons() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [topicsMap, setTopicsMap] = useState<Record<string, any[]>>({});
+  const [quizzesMap, setQuizzesMap] = useState<Record<string, any[]>>({});
   const [editingLesson, setEditingLesson] = useState<any>(null);
   const [editingTopic, setEditingTopic] = useState<any>(null);
+  const [editingQuiz, setEditingQuiz] = useState<any>(null);
+  const [finalAssessment, setFinalAssessment] = useState<any>(null);
+  const [isFinalQuizMode, setIsFinalQuizMode] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -43,8 +51,10 @@ export function ManageLessons() {
   useEffect(() => {
     if (selectedCourseId) {
       fetchLessons(selectedCourseId);
+      fetchFinalAssessment(selectedCourseId);
     } else {
       setLessons([]);
+      setFinalAssessment(null);
     }
   }, [selectedCourseId]);
 
@@ -79,6 +89,22 @@ export function ManageLessons() {
       toast.error("Failed to load lessons");
     } finally {
       setLoading(prev => ({ ...prev, lessons: false }));
+    }
+  };
+
+  const fetchFinalAssessment = async (courseId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/final-assessments?courseId=${courseId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+      });
+      const data = await response.json();
+      if (response.ok && data) {
+        setFinalAssessment(data);
+      } else {
+        setFinalAssessment(null);
+      }
+    } catch (error) {
+      console.error("Failed to load final assessment", error);
     }
   };
 
@@ -150,7 +176,60 @@ export function ManageLessons() {
     } else {
       setExpandedLesson(lessonId);
       fetchTopics(lessonId);
+      fetchQuizzes(lessonId);
     }
+  };
+
+  const fetchQuizzes = async (lessonId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/quizzes?lessonId=${lessonId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setQuizzesMap(prev => ({ ...prev, [lessonId]: data }));
+      }
+    } catch (error) {
+      console.error("Failed to load quizzes", error);
+    }
+  };
+
+  const handleDeleteQuiz = async (quizId: string, lessonId: string) => {
+    if (!window.confirm("Delete this assessment?")) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/quizzes/${quizId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
+      });
+      if (response.ok) {
+        toast.success("Assessment removed");
+        fetchQuizzes(lessonId);
+      } else {
+        toast.error("Failed to delete assessment");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleEditQuiz = (quiz: any, lessonId: string) => {
+    setActiveLessonId(lessonId);
+    setEditingQuiz(quiz);
+    setIsQuizModalOpen(true);
+  };
+
+  const openAddQuiz = (lessonId: string) => {
+    setActiveLessonId(lessonId);
+    setEditingQuiz(null);
+    setIsFinalQuizMode(false);
+    setIsQuizModalOpen(true);
+  };
+
+  const openFinalAssessment = () => {
+    setActiveLessonId(null);
+    setEditingQuiz(finalAssessment);
+    setIsFinalQuizMode(true);
+    setIsQuizModalOpen(true);
   };
 
   const openAddTopic = (lessonId: string) => {
@@ -183,13 +262,22 @@ export function ManageLessons() {
               Organize and manage your course content hierarchy
             </p>
           </div>
-          <Button
-            onClick={openAddLesson}
-            className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all active:scale-95"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Lesson
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={openFinalAssessment}
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl h-11 px-6 font-bold shadow-lg shadow-purple-500/20"
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              {finalAssessment ? 'Edit Final Assessment' : 'Add Final Assessment'}
+            </Button>
+            <Button
+              onClick={openAddLesson}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Lesson
+            </Button>
+          </div>
         </div>
 
         {/* Course Selector */}
@@ -270,6 +358,15 @@ export function ManageLessons() {
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
                         Topic
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs bg-white dark:bg-gray-800 border-purple-200 text-purple-600 hover:bg-purple-50"
+                        onClick={() => openAddQuiz(lesson._id)}
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Assessment
                       </Button>
                       <Button
                         variant="ghost"
@@ -360,6 +457,47 @@ export function ManageLessons() {
                             </Button>
                           </div>
                         )}
+
+                        {/* Render Quizzes for this lesson */}
+                        {quizzesMap[lesson._id]?.map((quiz) => (
+                          <div key={quiz._id} className="flex items-center gap-4 p-3 rounded-xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/30 hover:shadow-sm transition-all group/quiz">
+                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-xs font-bold text-purple-600">
+                              QA
+                            </div>
+                            <HelpCircle className="w-4 h-4 text-purple-500" />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">{quiz.title}</h4>
+                              <div className="flex items-center gap-3 mt-0.5">
+                                <span className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {quiz.duration} mins
+                                </span>
+                                <span className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                  <HelpCircle className="w-3 h-3" />
+                                  {quiz.questions?.length || 0} Questions
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 opacity-0 group-hover/quiz:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleEditQuiz(quiz, lesson._id)}
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                                onClick={() => handleDeleteQuiz(quiz._id, lesson._id)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -402,6 +540,24 @@ export function ManageLessons() {
           lessonId={activeLessonId || ''}
           lessonTitle={lessons.find((l: any) => l._id === activeLessonId)?.title || 'this section'}
           editingTopic={editingTopic}
+        />
+
+        {/* Create Assessment Modal */}
+        <CreateAssessmentModal
+          isOpen={isQuizModalOpen}
+          onClose={() => setIsQuizModalOpen(false)}
+          onSuccess={() => {
+            if (isFinalQuizMode) {
+              fetchFinalAssessment(selectedCourseId);
+            } else if (activeLessonId) {
+              fetchQuizzes(activeLessonId);
+            }
+          }}
+          lessonId={activeLessonId || ''}
+          courseId={selectedCourseId}
+          lessonTitle={isFinalQuizMode ? (coursesList.find(c => c._id === selectedCourseId)?.title || 'Course') : (lessons.find((l: any) => l._id === activeLessonId)?.title || 'this section')}
+          editingQuiz={editingQuiz}
+          isFinalAssessment={isFinalQuizMode}
         />
       </div>
     </DashboardLayout>

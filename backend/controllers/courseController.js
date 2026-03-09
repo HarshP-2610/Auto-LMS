@@ -46,7 +46,7 @@ const createCourse = async (req, res) => {
 // @access  Public
 const getCourses = async (req, res) => {
     try {
-        const courses = await Course.find({ status: 'published' }).populate('instructor', 'name');
+        const courses = await Course.find({ status: 'published' }).populate('instructor', 'name avatar');
         res.status(200).json({ success: true, data: courses });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

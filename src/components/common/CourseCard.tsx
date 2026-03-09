@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Users, PlayCircle, CheckCircle, ArrowRight, Award } from 'lucide-react';
+import { Star, Clock, PlayCircle, CheckCircle, ArrowRight, Award } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ interface CourseCardProps {
     id: string;
     title: string;
     thumbnail: string;
-    instructor: string | { name: string };
+    instructor: string | { name: string; avatar?: string };
     rating?: number;
     reviewCount?: number;
     price?: number;
@@ -71,14 +71,6 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
 
         {/* Content Section */}
         <div className="p-8 pt-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex -space-x-2">
-              <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center ring-2 ring-white dark:ring-neutral-900">
-                <Users className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{course.enrolledStudents?.toLocaleString() || '1.2k'}+ Learners</span>
-          </div>
 
           <h3 className="text-2xl font-black text-neutral-900 dark:text-neutral-50 leading-[1.2] mb-6 line-clamp-2 tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
             {course.title}
@@ -88,12 +80,12 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
           <div className="flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800 pt-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700 flex items-center justify-center text-xs font-black text-neutral-600 dark:text-neutral-300 shadow-inner group-hover:shadow-none group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                {(typeof course.instructor === 'string' ? course.instructor[0] : course.instructor.name[0])}
+                {(typeof course.instructor === 'string' ? course.instructor[0] : course.instructor?.name?.[0] || 'I')}
               </div>
               <div className="flex flex-col">
                 <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1 text-blue-600/0 group-hover:text-blue-600 transition-all">Verified Tutor</span>
                 <span className="text-sm font-bold text-neutral-700 dark:text-neutral-300 tracking-wide">
-                  {typeof course.instructor === 'string' ? course.instructor : course.instructor.name}
+                  {typeof course.instructor === 'string' ? course.instructor : course.instructor?.name || 'Instructor'}
                 </span>
               </div>
             </div>
@@ -179,9 +171,18 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
         </h3>
 
         {/* Instructor */}
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 font-medium">
-          By <span className="text-gray-700 dark:text-gray-300">{typeof course.instructor === 'string' ? course.instructor : course.instructor.name}</span>
-        </p>
+        <div className="flex items-center gap-2.5 mb-5">
+          <div className="w-7 h-7 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50 overflow-hidden shadow-sm">
+            {typeof course.instructor !== 'string' && course.instructor?.avatar ? (
+              <img src={course.instructor.avatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              (typeof course.instructor === 'string' ? course.instructor[0] : course.instructor?.name?.[0] || 'I')
+            )}
+          </div>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            {typeof course.instructor === 'string' ? course.instructor : course.instructor?.name || 'Instructor'}
+          </p>
+        </div>
 
         {/* Meta Info */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400 mb-6 bg-gray-50 dark:bg-gray-800/40 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
@@ -195,12 +196,6 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
             <div className="flex items-center gap-1.5 font-medium">
               <Clock className="w-4 h-4 text-gray-400" />
               {course.duration}
-            </div>
-          )}
-          {course.enrolledStudents && (
-            <div className="flex items-center gap-1.5 font-medium">
-              <Users className="w-4 h-4 text-gray-400" />
-              {course.enrolledStudents.toLocaleString()}
             </div>
           )}
         </div>

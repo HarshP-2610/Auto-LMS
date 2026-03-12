@@ -1,131 +1,105 @@
-# 🎓 Auto-LMS: The Future of Digital Learning
-
-![Banner](https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=1200&auto=format&fit=crop&q=80)
-
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-
-Auto-LMS is a premium, high-performance Learning Management System designed to bridge the gap between instructors and students. Featuring a state-of-the-art glassmorphic UI, robust progress tracking, and seamless video integration.
-
----
-
-## ✨ Key Features
-
-### 👨‍🎓 For Students
-- **Interactive Learning Hub**: A premium video player interface with automatic topic completion and auto-advance.
-- **Mastery Tracking**: Visual progress bars and completion checkmarks to track your journey in real-time.
-- **Seamless Checkout**: Modern purchase flow with UPI and local payment support.
-- **Smart Dashboard**: Resume exactly where you left off with "Continue Learning" persistence.
-
-### 👨‍🏫 For Instructors
-- **Advanced Course Creation**: Intuitive multi-step builder for courses, lessons, and topics.
-- **Hybrid Video Hosting**: Support for both external URLs (YouTube/Vimeo) and direct local video uploads.
-- **Analytics & Management**: Track enrollments and manage your curriculum with ease.
-- **Identity Verification**: Professional profile management and instructor status tracking.
-
-### 🛡️ For Admins
-- **Request Management**: Unified interface for reviewing course submissions and instructor applications.
-- **Analytics Engine**: Platform-wide data visualization for growth tracking.
-- **System Control**: Comprehensive user management and platform settings.
-
----
-
-## 🚀 Tech Stack
-
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons, Shadcn UI, Sonner Toasts |
-| **Backend** | Node.js, Express.js, Mongoose (MongoDB ODM) |
-| **Storage** | Multer (Local Storage Management for Images & Videos) |
-| **Auth** | JSON Web Tokens (JWT), BcryptJS |
-
----
-
-## 🛠️ Installation & Setup
-
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (v16+)
-- [MongoDB](https://www.mongodb.com/) (Local or Atlas)
-
-### 2. Clone the Repository
-```bash
-git clone https://github.com/HarshP-2610/Auto-LMS.git
-cd Auto-LMS
-```
-
-### 3. Backend Setup
-```bash
-cd backend
-npm install
-```
-Create a `.env` file in the `backend` folder:
-```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_super_secret_key
-```
-
-### 4. Frontend Setup
-```bash
-cd ..
-npm install
-```
-
-### 5. Start the Application
-**Run Backend:**
-```bash
-cd backend
-node server.js
-```
-**Run Frontend:**
-```bash
-cd ..
-npm run dev
-```
-
----
-
-## 📁 Project Structure
-
-```text
-app/
-├── backend/            # Express server & API routes
-│   ├── controllers/    # Business logic for API endpoints
-│   ├── models/         # MongoDB Mongoose schemas
-│   ├── routes/         # Express URL definitions
-│   └── uploads/        # Local storage for assets (images/videos)
-├── src/                # React frontend source
-│   ├── components/     # Reusable UI elements & layouts
-│   ├── dashboards/     # Role-specific dashboard interfaces
-│   ├── pages/          # Public and Auth pages
-│   └── routes/         # React Router configurations
-└── ...
-```
-
----
-
-## 💅 Design Philosophy
-Auto-LMS utilizes a **Modern Glassmorphic** aesthetic, prioritizing:
-- **Depth**: Using subtle shadows and blur effects.
-- **Vibrancy**: Curated HSL color palettes and smooth gradients.
-- **Responsiveness**: A mobile-first approach ensuring quality across all devices.
-- **Micro-interactions**: Subtle animations that make the UI feel alive.
-
----
-
-## 🤝 Contributing
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
----
-
-## 📝 License
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
+<!-- PROJECT HEADER -->
 
 <div align="center">
-  <p>Built with ❤️ by Harsh & Team</p>
-  <p><b>Accelerate Your Learning Today.</b></p>
+
+# 🚀 Auto-LMS  
+### Intelligent Learning Management System
+
+<img src="https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=1200&auto=format&fit=crop&q=80" width="100%" />
+
+<br>
+
+![GitHub Repo stars](https://img.shields.io/github/stars/HarshP-2610/Auto-LMS?style=for-the-badge)
+![GitHub forks](https://img.shields.io/github/forks/HarshP-2610/Auto-LMS?style=for-the-badge)
+![GitHub license](https://img.shields.io/github/license/HarshP-2610/Auto-LMS?style=for-the-badge)
+
+<br>
+
+### ⚡ Built With
+
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![NodeJS](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+
 </div>
+
+---
+
+# 📖 Overview
+
+**Auto-LMS** is a modern **AI-ready Learning Management System** designed to connect **students, instructors, and administrators** in one powerful digital learning platform.
+
+It provides a **seamless course marketplace, smart learning dashboard, instructor tools, and admin analytics** with a clean and modern UI.
+
+---
+
+# 🌟 Core Features
+
+## 👨‍🎓 Student Experience
+
+| Feature | Description |
+|------|-------------|
+| 📚 Course Marketplace | Browse and purchase courses easily |
+| ▶️ Smart Video Player | Auto progress tracking with lesson completion |
+| 📊 Learning Dashboard | Monitor course progress and achievements |
+| 🔁 Continue Learning | Resume exactly where you stopped |
+| 💳 Seamless Checkout | Support for UPI and modern payments |
+
+---
+
+## 👨‍🏫 Instructor Tools
+
+| Feature | Description |
+|------|-------------|
+| 🧑‍🏫 Course Builder | Multi-step course creation system |
+| 🎥 Video Hosting | Upload videos or use YouTube/Vimeo |
+| 📈 Enrollment Tracking | Monitor student activity |
+| 🪪 Instructor Verification | Professional instructor approval system |
+
+---
+
+## 🛡️ Admin Control Panel
+
+| Feature | Description |
+|------|-------------|
+| 📋 Course Approval | Approve or reject instructor courses |
+| 👤 Instructor Management | Manage instructor requests |
+| 📊 Platform Analytics | Visual dashboards and reports |
+| ⚙️ System Management | Complete control over users & content |
+
+---
+
+# 🧰 Tech Stack
+
+| Layer | Technology |
+|------|------------|
+| 🎨 Frontend | React 18, Vite, TypeScript |
+| 🎨 UI Framework | TailwindCSS, Shadcn UI |
+| ⚙️ Backend | Node.js, Express.js |
+| 🗄️ Database | MongoDB + Mongoose |
+| 🔐 Authentication | JWT + BcryptJS |
+| 📂 File Storage | Multer (Local Storage) |
+
+---
+
+# 🏗️ Project Architecture
+
+```text
+Auto-LMS/
+│
+├── backend/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   └── uploads/
+│
+├── src/
+│   ├── components/
+│   ├── dashboards/
+│   ├── pages/
+│   ├── routes/
+│   └── hooks/
+│
+└── README.md

@@ -308,6 +308,86 @@ const getInstructorStudents = async (req, res) => {
     }
 };
 
+// @desc    Search/filter courses
+// @route   GET /api/courses/search
+// @access  Public
+const searchCourses = async (req, res) => {
+    try {
+        const { q, category, difficulty, priceType, minRating } = req.query;
+
+        // Always start with published courses only
+        const query = { status: 'published' };
+
+        // Text search on title, description, and skills using regex
+        if (q && q.trim()) {
+            const regex = new RegExp(q.trim(), 'i');
+            query.$or = [
+                { title: regex },
+                { description: regex },
+                { skills: { $elemMatch: { $regex: regex } } }
+            ];
+        }
+
+        // Category filter (case-insensitive match)
+        if (category && category !== 'all') {
+            query.category = new RegExp(`^${category}$`, 'i');
+        }
+
+        // Difficulty / Level filter
+        if (difficulty) {
+            // Support comma-separated values like "Beginner,Intermediate"
+            const levels = difficulty.split(',').map(d => d.trim());
+            if (levels.length === 1) {
+                query.difficulty = new RegExp(`^${levels[0]}$`, 'i');
+            } else {
+                query.difficulty = { $in: levels.map(l => new RegExp(`^${l}$`, 'i')) };
+            }
+        }
+
+        // Price type filter
+        if (priceType) {
+            switch (priceType) {
+                case 'free':
+                    query.price = 0;
+                    break;
+                case 'under50':
+                    query.price = { $gt: 0, $lt: 50 };
+                    break;
+                case '50to100':
+                    query.price = { $gte: 50, $lte: 100 };
+                    break;
+                case 'over100':
+                    query.price = { $gt: 100 };
+                    break;
+                case 'paid':
+                    query.price = { $gt: 0 };
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        let courses = await Course.find(query).populate('instructor', 'name avatar');
+
+        // Rating filter (applied post-query since rating may not be stored on course model yet)
+        if (minRating) {
+            const min = parseFloat(minRating);
+            if (!isNaN(min)) {
+                courses = courses.filter(c => (c.rating || 0) >= min);
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            count: courses.length,
+            data: courses
+        });
+    } catch (error) {
+        console.error('Search error:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 module.exports = {
     createCourse,
     getCourses,
@@ -317,6 +397,7 @@ module.exports = {
     updateCourse,
     getPopularCourses,
     enrollCourse,
-    getInstructorStudents
+    getInstructorStudents,
+    searchCourses
 };
 

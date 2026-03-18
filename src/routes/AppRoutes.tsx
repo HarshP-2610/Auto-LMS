@@ -17,6 +17,7 @@ import { Register } from '@/pages/auth/Register';
 import { InstructorLogin } from '@/pages/auth/InstructorLogin';
 import { InstructorRegister } from '@/pages/auth/InstructorRegister';
 import { AdminLogin } from '@/pages/auth/AdminLogin';
+import { AuthSuccess } from '@/pages/auth/AuthSuccess';
 import { PendingDetails } from '@/pages/instructor/PendingDetails';
 import { ApplicationStatus } from '@/pages/instructor/ApplicationStatus';
 
@@ -29,6 +30,7 @@ import { StudentProfile } from '@/dashboards/student/StudentProfile';
 import { QuizzesList } from '@/dashboards/student/QuizzesList';
 import { CourseLearning } from '@/dashboards/student/CourseLearning';
 import { QuizResultView } from '@/dashboards/student/QuizResultView';
+import { WishlistPage } from '@/dashboards/student/WishlistPage';
 
 // Instructor Dashboard
 import { InstructorDashboard } from '@/dashboards/instructor/InstructorDashboard';
@@ -64,6 +66,7 @@ export function AppRoutes() {
       {/* Auth Routes */}
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<Register />} />
+      <Route path="/auth-success" element={<AuthSuccess />} />
       <Route path="/auth/instructor-login" element={<InstructorLogin />} />
       <Route path="/auth/instructor-register" element={<InstructorRegister />} />
       <Route path="/auth/admin-login" element={<AdminLogin />} />
@@ -79,6 +82,7 @@ export function AppRoutes() {
       <Route path="/student/certificates" element={<Certificates />} />
       <Route path="/student/profile" element={<StudentProfile />} />
       <Route path="/student/knowledge/:id" element={<CourseLearning />} />
+      <Route path="/student/wishlist" element={<WishlistPage />} />
 
       {/* Instructor Dashboard Routes */}
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />

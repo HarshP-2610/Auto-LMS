@@ -1,0 +1,36 @@
+I need to implement a production-ready AI Chatbot in my existing Auto-LMS project.
+
+### Project Context:
+- **Backend**: Node.js + Express + MongoDB.
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS.
+- **Current Auth**: JWT based.
+
+### Task Requirements:
+
+#### 1. Backend Implementation:
+- **Environment**: Add `OPENAI_API_KEY` to `.env`.
+- **Dependencies**: Install `openai` and `express-rate-limit`.
+- **Controller**: Create `backend/controllers/chatbotController.js`.
+  - Use the latest OpenAI SDK.
+  - System Prompt: "You are an AI assistant for a Learning Management System. Only answer questions related to courses, learning, dashboards, and student help. Keep answers short and helpful. If a question is outside LMS scope, politely decline."
+  - Handle user messages from `req.body.message`.
+- **Router**: Create `backend/routes/chatbotRoutes.js` for `POST /api/chatbot`.
+  - Apply a rate limit of 20 requests per minute per IP.
+- **Server**: Register the route in `backend/server.js`.
+
+#### 2. Frontend Implementation:
+- **Component**: Create `src/components/common/Chatbot.tsx`.
+  - Should be a floating component in the bottom-right corner.
+  - Collapsible chat window (Toggle state).
+  - Show message history (User on right, Bot on left).
+  - "Typing..." indicator while fetching response.
+  - Auto-scroll to the bottom on new messages.
+  - Quick-action buttons: "My Courses", "Help with Quiz", "Contact Support".
+- **Integration**: Import and render `<Chatbot />` in `App.tsx` or a global layout file.
+
+#### 3. UX & Security:
+- Styling with Tailwind CSS (Rounded bubbles, shadows, smooth transitions).
+- Ensure the API key stays on the backend and is never exposed to the frontend.
+- Robust error handling for API failures.
+
+Please provide the complete, working code for each file and specify where to paste it.

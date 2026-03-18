@@ -1,11 +1,9 @@
-import { Link } from 'react-router-dom';
 import {
   BookOpen,
   Award,
   TrendingUp,
   PlayCircle,
   ChevronRight,
-  FileQuestion,
   CheckCircle,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -14,11 +12,18 @@ import { ProgressChart } from '@/components/charts/ProgressChart';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Leaderboard } from '@/components/common/Leaderboard';
 import {
   studentStats,
   certificates,
 } from '@/data/mockData';
 import { Loader2 } from 'lucide-react';
+import { XPProgressBar } from '@/components/gamification/XPProgressBar';
+import { StreakCounter } from '@/components/gamification/StreakCounter';
+import { BadgeShowcase } from '@/components/gamification/BadgeShowcase';
+import type { Badge } from '@/components/gamification/BadgeShowcase';
+import { LevelUpAnimation } from '@/components/gamification/LevelUpAnimation';
 
 export function StudentDashboard() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -39,7 +44,13 @@ export function StudentDashboard() {
       { day: 'Sun', progress: 0 },
     ]
   });
-  const [recentQuizzes] = useState<any[]>([]);
+  const [gamification, setGamification] = useState({
+    xp: 0,
+    level: 1,
+    streak: 0,
+    badges: [] as Badge[]
+  });
+  const [showLevelUp, setShowLevelUp] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -91,6 +102,13 @@ export function StudentDashboard() {
               certificatesEarned: (data.certificates || []).length,
               averageProgress: avgProg
             }));
+
+            setGamification({
+              xp: data.xp || 0,
+              level: data.level || 1,
+              streak: data.streak || 0,
+              badges: data.badges || []
+            });
           }
         }
       } catch (error) {
@@ -114,6 +132,7 @@ export function StudentDashboard() {
   }
 
   return (
+    <>
     <DashboardLayout userRole="student">
       <div className="space-y-8">
         {/* Welcome Header */}
@@ -132,6 +151,16 @@ export function StudentDashboard() {
               Continue Learning
             </Link>
           </Button>
+        </div>
+
+        {/* Gamification Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            <XPProgressBar xp={gamification.xp} level={gamification.level} />
+          </div>
+          <div className="lg:col-span-1">
+            <StreakCounter streak={gamification.streak} />
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -241,70 +270,12 @@ export function StudentDashboard() {
 
           {/* Sidebar */}
           <div className="space-y-8">
-            {/* Quiz Results */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Recent Quizzes
-                </h2>
-                <Link
-                  to="/student/quizzes"
-                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
-                >
-                  View All
-                </Link>
-              </div>
+            {/* Gamification Badges */}
+            <BadgeShowcase badges={gamification.badges} />
 
-              <div className="space-y-4">
-                {recentQuizzes.length > 0 ? (
-                  recentQuizzes.map((result) => (
-                    <div
-                      key={result.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800"
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${result.passed
-                          ? 'bg-green-100 dark:bg-green-900/30'
-                          : 'bg-red-100 dark:bg-red-900/30'
-                          }`}
-                      >
-                        <FileQuestion
-                          className={`w-5 h-5 ${result.passed
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                            }`}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900 dark:text-white text-sm">
-                          {result.quizTitle}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {result.courseTitle}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`text-sm font-bold ${result.passed
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                            }`}
-                        >
-                          {result.score}%
-                        </span>
-                        <p className="text-xs text-gray-500">
-                          {result.passed ? 'Passed' : 'Failed'}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-                    No quizzes taken yet
-                  </p>
-                )}
-              </div>
-            </div>
+            {/* Student Leaderboard */}
+            <Leaderboard />
+
 
             {/* Certificates */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
@@ -393,5 +364,11 @@ export function StudentDashboard() {
         </div>
       </div>
     </DashboardLayout>
+    <LevelUpAnimation 
+        level={gamification.level} 
+        show={showLevelUp} 
+        onComplete={() => setShowLevelUp(false)} 
+    />
+    </>
   );
 }

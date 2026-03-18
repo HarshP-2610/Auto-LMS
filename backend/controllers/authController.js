@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { handleStreakOnLogin } = require('../utils/xpSystem');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -87,12 +88,19 @@ const loginUser = async (req, res) => {
             return res.status(403).json({ message });
         }
 
+        // Handle Streak and Daily XP
+        let gamification = null;
+        if (user.role === 'student' || user.role === 'user') {
+            gamification = await handleStreakOnLogin(user);
+        }
+
         res.json({
             _id: user._id,
             name: user.name,
             email: user.email,
             role: user.role,
             adminLevel: user.adminLevel,
+            gamification,
             token: generateToken(user._id)
         });
     } catch (error) {
@@ -122,11 +130,15 @@ const studentLogin = async (req, res) => {
         const isMatch = await user.matchPassword(password);
         if (!isMatch) return res.status(401).json({ message: 'Incorrect Password' });
 
+        // Handle Streak and Daily XP
+        const gamification = await handleStreakOnLogin(user);
+
         res.json({
             _id: user._id,
             name: user.name,
             email: user.email,
             role: user.role,
+            gamification,
             token: generateToken(user._id)
         });
     } catch (error) {

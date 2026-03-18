@@ -9,11 +9,13 @@ const {
     updateCourse,
     getPopularCourses,
     enrollCourse,
-    getInstructorStudents
+    getInstructorStudents,
+    searchCourses
 } = require('../controllers/courseController');
 
 const { protect } = require('../middleware/authMiddleware');
 
+router.get('/search', searchCourses);
 router.get('/popular', getPopularCourses);
 router.get('/my-courses', protect, getMyCourses);
 router.get('/instructor/students', protect, getInstructorStudents);

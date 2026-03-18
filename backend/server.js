@@ -7,6 +7,9 @@ const connectDB = require('./config/db');
 // Load env vars
 dotenv.config();
 
+// Passport config
+require('./config/passport');
+
 // Ensure uploads directory exists
 const fs = require('fs');
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -32,6 +35,19 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cors());
 
+// Session Middleware
+const session = require('express-session');
+app.use(session({ 
+    secret: process.env.JWT_SECRET || 'secret', 
+    resave: false, 
+    saveUninitialized: false 
+}));
+
+// Passport Middleware
+const passport = require('passport');
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
@@ -45,6 +61,10 @@ app.use('/api/quizzes', require('./routes/quizRoutes'));
 app.use('/api/progress', require('./routes/progressRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/final-assessments', require('./routes/finalAssessmentRoutes'));
+app.use('/api/reviews', require('./routes/reviewRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/leaderboard', require('./routes/leaderboardRoutes'));
+app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 

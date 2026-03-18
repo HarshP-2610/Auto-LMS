@@ -1,6 +1,7 @@
 const Progress = require('../models/Progress');
 const Course = require('../models/Course');
 const Topic = require('../models/Topic');
+const { awardXP } = require('../utils/xpSystem');
 
 // @desc    Update progress (Mark topic as complete)
 // @route   POST /api/progress/mark-complete
@@ -43,9 +44,13 @@ const markTopicComplete = async (req, res) => {
 
         await progress.save();
 
+        // Award 50 XP for completing a topic
+        const gamification = await awardXP(req.user._id, 50);
+
         res.status(200).json({
             success: true,
-            data: progress
+            data: progress,
+            gamification
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

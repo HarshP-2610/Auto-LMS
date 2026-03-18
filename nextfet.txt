@@ -1,0 +1,92 @@
+================================================================================
+           AUTO-LMS — MASTER BUG, ERROR & VULNERABILITY REPORT
+================================================================================
+
+DATE GENERATED: 2026-03-18
+PROJECT LOCATION: d:\Harsh\Auto-LMS\app
+PURPOSE: Use this document to instruct your AI to systematically fix the hidden 
+bugs, security flaws, and architecture issues listed below.
+
+================================================================================
+SECTION 1: CRITICAL SECURITY VULNERABILITIES (Must Fix First)
+================================================================================
+
+1. GLOBAL CORS EXPOSURE
+   - FILE: `backend/server.js`
+   - BUG: `app.use(cors())` is invoked without origin restrictions.
+   - WHY IT'S BAD: Any malicious website can make requests to your API on behalf of your users.
+   - AI PROMPT: "Fix CORS in server.js to strictly allow requests only from `process.env.CLIENT_URL` with credentials enabled."
+
+2. HARDCODED JWT FALLBACK SECRETS
+   - FILE: `backend/controllers/authController.js`
+   - BUG: Extracts `process.env.JWT_SECRET || 'supersecretkey_autolms'`.
+   - WHY IT'S BAD: An attacker downloading the source code instantly knows the secret used to forge valid login tokens.
+   - AI PROMPT: "Remove hardcoded JWT fallbacks in my auth controllers and config files. Ensure it only reads from `process.env` and crashes if the environment variable is missing."
+
+3. MISSING API RATE LIMITING
+   - FILE: `backend/routes/authRoutes.js`
+   - BUG: No limit on how many login checks can be made.
+   - WHY IT'S BAD: Hackers can run infinite brute-force bot scripts to crack passwords.
+   - AI PROMPT: "Install and configure `express-rate-limit` on all authentication and password reset routes."
+
+================================================================================
+SECTION 2: BACKEND STABILITY & LOGIC BUGS
+================================================================================
+
+4. NO GLOBAL ERROR HANDLER MIDDLEWARE
+   - FILE: `backend/server.js`
+   - BUG: Uncaught promise rejections or database errors will either crash the Node server or return an ugly unformatted HTML stack trace to the frontend.
+   - AI PROMPT: "Implement a robust global error handling middleware in Express that catches all errors, formats them into standard JSON responses, and hides sensitive stack traces in production."
+
+5. MISSING PAYLOAD INPUT VALIDATION
+   - FILE: All `backend/routes/*.js`
+   - BUG: Controllers currently trust the `req.body` blindly without schema checks.
+   - WHY IT'S BAD: A user can send malformed strings or NoSQL injection payloads directly into Mongoose.
+   - AI PROMPT: "Add `express-validator` to all critical routes (auth, courses, payments) to strictly validate email formats, string lengths, and numeric values before they hit controllers."
+
+6. DEAD REFERENCES IN MONGODB POPULATION
+   - FILE: `backend/controllers/userController.js` (and others)
+   - BUG: When a course or lesson is deleted, the ObjectID remains in the User's `enrolledCourses` array. The user profile route manually cleans these "dead links" on every single profile fetch.
+   - WHY IT'S BAD: Terrible performance loop.
+   - AI PROMPT: "Implement Mongoose 'pre-remove' middleware hooks so that when a course or quiz is deleted, it automatically removes its ID from all associated user arrays to prevent dead references."
+
+================================================================================
+SECTION 3: FRONTEND (REACT/TYPESCRIPT) ERRORS & TECHNICAL DEBT
+================================================================================
+
+7. HARDCODED LOCALHOST API URLS
+   - FILE: `src/dashboards/student/StudentDashboard.tsx` (and other fetch files components)
+   - BUG: Network fetches explicitly call `http://localhost:5000/api/...`
+   - WHY IT'S BAD: The moment you deploy your frontend to Vercel/Netlify, all API calls will fail because they will still try to reach localhost.
+   - AI PROMPT: "Refactor all hardcoded `http://localhost:5000` strings across the React app to use `import.meta.env.VITE_API_URL`."
+
+8. ABUSE OF "ANY" TYPES IN TYPESCRIPT
+   - FILE: `src/dashboards/*`
+   - BUG: State is declared blindly (e.g. `const [courses, setCourses] = useState<any[]>([])`).
+   - WHY IT'S BAD: Defeats the purpose of TypeScript. Leads to hidden "Cannot read properties of undefined" UI crashes in production.
+   - AI PROMPT: "Create global TypeScript interfaces for `User`, `Course`, `Lesson`, and `Gamification` models, and tightly type all API response objects in the student and instructor dashboards."
+
+9. STATE DESYNC AROUND GAMIFICATION UI
+   - FILE: `src/components/gamification/*`
+   - BUG: The backend successfully triggers `awardXP` during quiz/lesson completions, sending the new XP in the response payload. However, the Frontend Dashboard does not globally update the `XPProgressBar` until the user manually refreshes the page!
+   - AI PROMPT: "Convert the user gamification state into a global React Context (or Zustand/Redux store) so that when a quiz is passed, the XP triggers the Level Up Animation globally without a page reload."
+
+================================================================================
+SECTION 4: MISSING BUSINESS LOGIC ERRORS
+================================================================================
+
+10. UNVERIFIED PAYMENT WEBHOOKS
+    - FILE: `backend/controllers/paymentController.js`
+    - BUG: The endpoint that confirms a user has "paid" has no cryptographic signature verification from Stripe / Razorpay.
+    - WHY IT'S BAD: Students can technically spoof a JSON request to enroll themselves in premium courses for free!
+    - AI PROMPT: "Integrate exact payment gateway webhook signature verification before marking course progression inside payment controllers."
+
+11. SESSION EXPIRATION BREAKAGE
+    - FILE: `backend/controllers/authController.js`
+    - BUG: The JWT is issued for 30 days. There is no concept of a "Refresh Token".
+    - WHY IT'S BAD: When the token expires, the React frontend gets a completely unhandled 401 Unauthorized API error, leading to a broken blank white screen instead of smoothly redirecting the user to `/login`.
+    - AI PROMPT: "Create an Axios Interceptor on the frontend that catches 401 Unauthorized errors and gracefully redirects the user to the login screen while clearing `localStorage` tokens."
+
+================================================================================
+END OF ERROR REPORT
+Use these exact blocks with your AI Assistant to quickly address deep-rooted project flaws.

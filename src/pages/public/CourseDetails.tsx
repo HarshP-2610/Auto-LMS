@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ReviewForm } from '@/components/common/ReviewForm';
+import { ReviewList } from '@/components/common/ReviewList';
 import {
   Star,
   Users,
@@ -88,6 +90,7 @@ export function CourseDetails() {
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeTab, setActiveTab] = useState('curriculum');
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchCourse();
@@ -528,6 +531,16 @@ export function CourseDetails() {
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* Reviews Section */}
+            <section id="reviews" className={`${activeTab === 'reviews' ? 'block' : 'hidden md:block'} space-y-8 pt-6`}>
+              <h2 className="text-3xl font-black tracking-tight">Student Reviews</h2>
+              <ReviewForm
+                courseId={id!}
+                onReviewSubmitted={() => setReviewRefreshKey((k) => k + 1)}
+              />
+              <ReviewList courseId={id!} refreshKey={reviewRefreshKey} />
             </section>
           </div>
 

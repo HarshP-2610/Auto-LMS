@@ -10,9 +10,16 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Please add an email'],
         unique: true
     },
+    googleId: {
+        type: String,
+        sparse: true
+    },
     password: {
         type: String,
-        required: [true, 'Please add a password'],
+        required: [
+            function() { return !this.googleId; },
+            'Please add a password'
+        ],
         select: false
     },
     role: {
@@ -22,11 +29,19 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: [true, 'Please add a mobile number']
+        required: [
+            function() { return !this.googleId && this.role !== 'user'; },
+            'Please add a mobile number'
+        ],
+        default: ''
     },
     address: {
         type: String,
-        required: [true, 'Please add an address']
+        required: [
+            function() { return !this.googleId && this.role !== 'user'; },
+            'Please add an address'
+        ],
+        default: ''
     },
 
     // ==========================================
@@ -125,10 +140,47 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: 'no-photo.jpg'
     },
+    wishlist: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course'
+    }],
     isActive: {
         type: Boolean,
         default: true
-    }
+    },
+
+    // ==========================================
+    // Gamification Data
+    // ==========================================
+    xp: {
+        type: Number,
+        default: 0
+    },
+    level: {
+        type: Number,
+        default: 1
+    },
+    streak: {
+        type: Number,
+        default: 0
+    },
+    lastLogin: {
+        type: Date
+    },
+    badges: [{
+        name: {
+            type: String,
+            required: true
+        },
+        icon: {
+            type: String, // e.g., 'Beginner', 'Learner', 'QuizMaster', 'StreakKing'
+            required: true
+        },
+        dateAwarded: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 }, {
     timestamps: true
 });

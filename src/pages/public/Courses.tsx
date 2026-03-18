@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, X, Loader2, Filter, BookOpen } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, SlidersHorizontal, X, Loader2, Filter, BookOpen, Star } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { CourseCard } from '@/components/common/CourseCard';
@@ -14,15 +14,21 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { categories } from '@/data/mockData';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export function Courses() {
   const [coursesList, setCoursesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedLevel, setSelectedLevel] = useState<string[]>([]);
   const [selectedPrice, setSelectedPrice] = useState<string[]>([]);
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Debounce the search query by 300ms
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const levels = ['Beginner', 'Intermediate', 'Advanced'];
   const priceRanges = [
@@ -31,22 +37,24 @@ export function Courses() {
     { id: '50to100', label: '$50 - $100' },
     { id: 'over100', label: 'Over $100' },
   ];
+  const ratingOptions = [4, 3, 2, 1];
 
+  // Check if any filter is active (determines whether to use server-side search)
+  const hasActiveFilters =
+    debouncedSearch.trim() !== '' ||
+    selectedCategory !== 'all' ||
+    selectedLevel.length > 0 ||
+    selectedPrice.length > 0 ||
+    selectedRating !== null;
+
+  // Fetch ALL courses (default / unfiltered)
   const fetchCourses = async () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:5000/api/courses');
       const data = await response.json();
       if (response.ok) {
-        // Map database fields to what the UI expects
-        const mappedCourses = data.data.map((course: any) => ({
-          ...course,
-          id: course._id,
-          level: course.difficulty,
-          thumbnail: course.thumbnail === 'no-image.jpg'
-            ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
-            : (course.thumbnail.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)
-        }));
+        const mappedCourses = mapCourses(data.data);
         setCoursesList(mappedCourses);
       } else {
         toast.error(data.message || 'Failed to fetch courses');
@@ -59,53 +67,81 @@ export function Courses() {
     }
   };
 
+  // Fetch FILTERED courses via the new /search endpoint
+  const fetchFilteredCourses = useCallback(async () => {
+    try {
+      setSearchLoading(true);
+
+      // Build query params
+      const params = new URLSearchParams();
+      if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+      if (selectedCategory !== 'all') params.set('category', selectedCategory);
+      if (selectedLevel.length > 0) params.set('difficulty', selectedLevel.join(','));
+      if (selectedPrice.length > 0) {
+        // Send the first selected price filter (server handles one at a time)
+        params.set('priceType', selectedPrice[0]);
+      }
+      if (selectedRating !== null) params.set('minRating', selectedRating.toString());
+
+      const response = await fetch(`http://localhost:5000/api/courses/search?${params.toString()}`);
+      const data = await response.json();
+      if (response.ok) {
+        let mappedCourses = mapCourses(data.data);
+
+        // If multiple price filters selected, apply additional filtering client-side
+        if (selectedPrice.length > 1) {
+          mappedCourses = mappedCourses.filter((course: any) => {
+            const price = course.price || 0;
+            return selectedPrice.some((range) => {
+              switch (range) {
+                case 'free': return price === 0;
+                case 'under50': return price > 0 && price < 50;
+                case '50to100': return price >= 50 && price <= 100;
+                case 'over100': return price > 100;
+                default: return false;
+              }
+            });
+          });
+        }
+
+        setCoursesList(mappedCourses);
+      } else {
+        toast.error(data.message || 'Search failed');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error('Network error during search.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [debouncedSearch, selectedCategory, selectedLevel, selectedPrice, selectedRating]);
+
+  // Map raw DB course objects to the shape the UI expects
+  const mapCourses = (rawCourses: any[]) => {
+    return rawCourses.map((course: any) => ({
+      ...course,
+      id: course._id,
+      level: course.difficulty,
+      thumbnail: course.thumbnail === 'no-image.jpg'
+        ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
+        : (course.thumbnail.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)
+    }));
+  };
+
+  // Initial load — fetch all courses
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  // Filter courses locally for search/category/etc.
-  const filteredCourses = coursesList.filter((course) => {
-    // Search filter
-    if (
-      searchQuery &&
-      !course.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !course.description.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
+  // When any filter changes, fetch from the server
+  useEffect(() => {
+    if (hasActiveFilters) {
+      fetchFilteredCourses();
+    } else {
+      // No filters — show all courses (re-fetch to be safe)
+      fetchCourses();
     }
-
-    // Category filter
-    if (selectedCategory !== 'all' && course.category?.toLowerCase() !== selectedCategory) {
-      return false;
-    }
-
-    // Level filter
-    if (selectedLevel.length > 0 && !selectedLevel.includes(course.level || '')) {
-      return false;
-    }
-
-    // Price filter
-    if (selectedPrice.length > 0) {
-      const price = course.price || 0;
-      const matchesPrice = selectedPrice.some((range) => {
-        switch (range) {
-          case 'free':
-            return price === 0;
-          case 'under50':
-            return price > 0 && price < 50;
-          case '50to100':
-            return price >= 50 && price <= 100;
-          case 'over100':
-            return price > 100;
-          default:
-            return false;
-        }
-      });
-      if (!matchesPrice) return false;
-    }
-
-    return true;
-  });
+  }, [debouncedSearch, selectedCategory, selectedLevel, selectedPrice, selectedRating]);
 
   const toggleLevel = (level: string) => {
     setSelectedLevel((prev) =>
@@ -123,6 +159,7 @@ export function Courses() {
     setSelectedCategory('all');
     setSelectedLevel([]);
     setSelectedPrice([]);
+    setSelectedRating(null);
     setSearchQuery('');
   };
 
@@ -130,7 +167,10 @@ export function Courses() {
     (selectedCategory !== 'all' ? 1 : 0) +
     selectedLevel.length +
     selectedPrice.length +
+    (selectedRating !== null ? 1 : 0) +
     (searchQuery ? 1 : 0);
+
+  const isSearching = searchLoading && hasActiveFilters;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0F1C] transition-colors duration-300">
@@ -149,12 +189,16 @@ export function Courses() {
               </p>
             </div>
 
-            {/* Search */}
+            {/* Search with debounce indicator */}
             <div className="relative max-w-md w-full group">
               <div className="absolute inset-0 bg-blue-500/5 rounded-2xl blur-lg transition duration-300 group-hover:bg-blue-500/10"></div>
               <div className="relative flex items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                 <div className="pl-4 pr-2">
-                  <Search className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  {isSearching ? (
+                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                  ) : (
+                    <Search className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  )}
                 </div>
                 <Input
                   type="text"
@@ -218,7 +262,7 @@ export function Courses() {
                 )}
               </div>
 
-              <Accordion type="multiple" defaultValue={['category', 'level', 'price']} className="space-y-6">
+              <Accordion type="multiple" defaultValue={['category', 'level', 'price', 'rating']} className="space-y-6">
                 {/* Category Filter */}
                 <AccordionItem value="category" className="border-none">
                   <AccordionTrigger className="hover:no-underline py-2 text-base font-semibold text-gray-900 dark:text-gray-100 data-[state=open]:text-blue-600 dark:data-[state=open]:text-blue-400 transition-colors">
@@ -315,6 +359,48 @@ export function Courses() {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+
+                {/* ★ NEW: Rating Filter */}
+                <AccordionItem value="rating" className="border-none">
+                  <AccordionTrigger className="hover:no-underline py-2 text-base font-semibold text-gray-900 dark:text-gray-100 data-[state=open]:text-blue-600 dark:data-[state=open]:text-blue-400 transition-colors">
+                    Rating
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 pb-2">
+                    <div className="space-y-2">
+                      {ratingOptions.map((rating) => {
+                        const isSelected = selectedRating === rating;
+                        return (
+                          <button
+                            key={rating}
+                            onClick={() => setSelectedRating(isSelected ? null : rating)}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${isSelected
+                              ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'
+                              }`}
+                          >
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < rating
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300 dark:text-gray-600'
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                            <span className={`text-sm ${isSelected
+                              ? 'text-yellow-700 dark:text-yellow-400 font-medium'
+                              : 'text-gray-600 dark:text-gray-400'
+                              }`}>
+                              {rating}+ & above
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             </div>
           </aside>
@@ -324,11 +410,20 @@ export function Courses() {
             {/* Results Header */}
             <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-md rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border border-gray-200/50 dark:border-gray-800/50">
               <p className="text-gray-600 dark:text-gray-400 font-medium">
-                Showing{' '}
-                <span className="font-bold text-gray-900 dark:text-white bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">
-                  {filteredCourses.length}
-                </span>{' '}
-                outstanding courses
+                {isSearching ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    Searching...
+                  </span>
+                ) : (
+                  <>
+                    Showing{' '}
+                    <span className="font-bold text-gray-900 dark:text-white bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">
+                      {coursesList.length}
+                    </span>{' '}
+                    outstanding courses
+                  </>
+                )}
               </p>
             </div>
 
@@ -359,6 +454,15 @@ export function Courses() {
                     </button>
                   </Badge>
                 ))}
+                {selectedRating !== null && (
+                  <Badge className="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors">
+                    <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+                    <span className="font-medium">{selectedRating}+ Stars</span>
+                    <button onClick={() => setSelectedRating(null)} className="hover:bg-yellow-200 dark:hover:bg-yellow-800 rounded-full p-0.5 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </Badge>
+                )}
               </div>
             )}
 
@@ -368,9 +472,9 @@ export function Courses() {
                 <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-6" />
                 <p className="text-lg font-medium text-gray-600 dark:text-gray-300">Curating the finest courses for you...</p>
               </div>
-            ) : filteredCourses.length > 0 ? (
+            ) : coursesList.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredCourses.map((course, idx) => (
+                {coursesList.map((course, idx) => (
                   <div key={course._id || course.id} className="animate-in fade-in slide-in-from-bottom-4" style={{ animationDelay: `${idx * 100}ms`, animationFillMode: 'both' }}>
                     <CourseCard course={course} />
                   </div>
@@ -427,4 +531,3 @@ export function Courses() {
     </div>
   );
 }
-

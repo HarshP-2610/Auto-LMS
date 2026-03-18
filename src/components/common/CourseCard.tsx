@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Clock, PlayCircle, CheckCircle, ArrowRight } from 'lucide-react';
+import { Star, Clock, PlayCircle, CheckCircle, ArrowRight, Heart } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 interface CourseCardProps {
   course: {
     id: string;
+    _id?: string; // Add _id support
     title: string;
     thumbnail: string;
     instructor: string | { name: string; avatar?: string };
@@ -29,12 +32,101 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course, variant = 'default', showProgress = false }: CourseCardProps) {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+  const courseId = course.id || course._id;
+
+  useEffect(() => {
+    const checkWishlist = () => {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.wishlist) {
+          // wishlist might be array of strings (IDs) or array of objects
+          const isInWishlist = user.wishlist.some((item: any) => 
+            (typeof item === 'string' ? item === courseId : item._id === courseId)
+          );
+          setIsWishlisted(isInWishlist);
+        }
+      }
+    };
+    checkWishlist();
+  }, [courseId]);
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const token = localStorage.getItem('userToken');
+    if (!token) {
+      window.location.href = '/auth/login';
+      return;
+    }
+
+    setIsToggling(true);
+    try {
+      if (isWishlisted) {
+        const res = await fetch(`http://localhost:5000/api/users/wishlist/remove/${courseId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          setIsWishlisted(false);
+          updateLocalStorageWishlist(courseId, 'remove');
+        }
+      } else {
+        const res = await fetch('http://localhost:5000/api/users/wishlist/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ courseId })
+        });
+        if (res.ok) {
+          setIsWishlisted(true);
+          updateLocalStorageWishlist(courseId, 'add');
+        }
+      }
+    } catch (error) {
+      console.error("Wishlist toggle failed", error);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  const updateLocalStorageWishlist = (id: string, action: 'add' | 'remove') => {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      const user = JSON.parse(userData);
+      if (!user.wishlist) user.wishlist = [];
+      
+      if (action === 'add') {
+        if (!user.wishlist.includes(id)) {
+          user.wishlist.push(id);
+        }
+      } else {
+        user.wishlist = user.wishlist.filter((item: any) => 
+          (typeof item === 'string' ? item !== id : item._id !== id)
+        );
+      }
+      localStorage.setItem('userData', JSON.stringify(user));
+    }
+  };
+
   const isProgressVariant = variant === 'progress' || showProgress;
   const isPremium = variant === 'premium';
 
   if (isPremium) {
     return (
-      <div className="group bg-white border border-neutral-200 rounded-xl overflow-hidden hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md">
+      <motion.div 
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="group bg-white border border-neutral-200 rounded-xl overflow-hidden hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md"
+      >
         {/* Simple Thumbnail */}
         <div className="relative aspect-[16/9] overflow-hidden bg-neutral-100">
           <img
@@ -47,6 +139,15 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
               {course.category || 'Featured'}
             </Badge>
           </div>
+
+          {/* Wishlist Button */}
+          <button
+            onClick={toggleWishlist}
+            disabled={isToggling}
+            className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/90 shadow-sm border border-neutral-200 text-neutral-400 hover:text-red-500 transition-colors"
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+          </button>
         </div>
 
         {/* Professional Content */}
@@ -80,19 +181,25 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
             </div>
 
             <Link
-              to={isProgressVariant ? `/student/knowledge/${course.id}` : `/courses/${course.id}`}
+              to={isProgressVariant ? `/student/knowledge/${courseId}` : `/courses/${courseId}`}
               className="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors"
             >
               <PlayCircle className="w-5 h-5" />
             </Link>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="group bg-white dark:bg-gray-900/50 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800/60 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 backdrop-blur-sm">
+    <motion.div 
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -4 }}
+      className="group bg-white dark:bg-gray-900/50 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800/60 shadow-md hover:shadow-2xl transition-all duration-300 backdrop-blur-sm"
+    >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] overflow-hidden bg-gray-100 dark:bg-gray-800">
         <img
@@ -102,11 +209,28 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-        {course.category && (
-          <Badge className="absolute top-4 left-4 bg-white/90 dark:bg-black/60 backdrop-blur-md text-gray-900 dark:text-white border-0 py-1.5 px-3 shadow-sm rounded-full text-xs font-semibold uppercase tracking-wider">
-            {course.category}
-          </Badge>
-        )}
+        <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+          {course.category && (
+            <Badge className="bg-white/90 dark:bg-black/60 backdrop-blur-md text-gray-900 dark:text-white border-0 py-1.5 px-3 shadow-sm rounded-full text-xs font-semibold uppercase tracking-wider">
+              {course.category}
+            </Badge>
+          )}
+        </div>
+
+        {/* Wishlist Button */}
+        <button
+          onClick={toggleWishlist}
+          disabled={isToggling}
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/90 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm border border-gray-100 dark:border-gray-800 text-gray-400 hover:text-red-500 transition-all active:scale-90"
+        >
+          <motion.div
+            animate={isWishlisted ? { scale: [1, 1.3, 1] } : {}}
+            transition={{ duration: 0.3 }}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} />
+          </motion.div>
+        </button>
+
         {course.completed && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transform scale-100 animate-in zoom-in duration-300">
@@ -146,11 +270,11 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
             {typeof course.instructor !== 'string' && course.instructor?.avatar ? (
               <img src={course.instructor.avatar} alt="" className="w-full h-full object-cover" />
             ) : (
-              (typeof course.instructor === 'string' ? course.instructor[0] : course.instructor?.name?.[0] || 'I')
+              (typeof course.instructor === 'string' ? course.instructor[0] : (course.instructor as any)?.name?.[0] || 'I')
             )}
           </div>
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            {typeof course.instructor === 'string' ? course.instructor : course.instructor?.name || 'Instructor'}
+            {typeof course.instructor === 'string' ? course.instructor : (course.instructor as any)?.name || 'Instructor'}
           </p>
         </div>
 
@@ -213,7 +337,7 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
                 : 'rounded-xl h-11 px-6 group/btn border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
             }
           >
-            <Link to={isProgressVariant ? `/student/knowledge/${course.id}` : `/courses/${course.id}`} className="flex items-center gap-2 font-semibold">
+            <Link to={isProgressVariant ? `/student/knowledge/${courseId}` : `/courses/${courseId}`} className="flex items-center gap-2 font-semibold">
               {isProgressVariant ? (
                 <>
                   <PlayCircle className="w-5 h-5" />
@@ -229,6 +353,6 @@ export function CourseCard({ course, variant = 'default', showProgress = false }
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

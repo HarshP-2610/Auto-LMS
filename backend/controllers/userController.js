@@ -16,6 +16,14 @@ const getUserProfile = async (req, res) => {
                     path: 'instructor',
                     select: 'name avatar'
                 }
+            })
+            .populate({
+                path: 'wishlist',
+                select: 'title thumbnail category difficulty duration instructor lessonsCount price status',
+                populate: {
+                    path: 'instructor',
+                    select: 'name avatar'
+                }
             });
 
         if (!user) {
@@ -31,6 +39,15 @@ const getUserProfile = async (req, res) => {
             user.enrolledCourses = validEnrolledCourses.map(c => c._id);
             await user.save();
             console.log(`Cleaned up ${initialEnrolledCount - validEnrolledCourses.length} dead course references for user ${user.name}`);
+        }
+
+        // Clean up wishlist dead references
+        const initialWishlistCount = user.wishlist.length;
+        const validWishlistCourses = user.wishlist.filter(c => c !== null);
+        if (validWishlistCourses.length !== initialWishlistCount) {
+            user.wishlist = validWishlistCourses.map(c => c._id);
+            await user.save();
+            console.log(`Cleaned up ${initialWishlistCount - validWishlistCourses.length} dead wishlist references for user ${user.name}`);
         }
 
         // Fetch progress from separate Progress model
@@ -55,6 +72,7 @@ const getUserProfile = async (req, res) => {
             expertise: user.expertise || [],
             payoutSettings: user.payoutSettings || { method: 'PayPal', schedule: 'Monthly' },
             enrolledCourses: validEnrolledCourses,
+            wishlist: validWishlistCourses,
             progress: filteredProgress,
             certificates: user.certificates || [],
             taughtCourses: user.taughtCourses || [],
@@ -63,7 +81,11 @@ const getUserProfile = async (req, res) => {
             earnings: user.earnings,
             adminLevel: user.adminLevel,
             permissions: user.permissions,
-            createdAt: user.createdAt
+            createdAt: user.createdAt,
+            xp: user.xp,
+            level: user.level,
+            streak: user.streak,
+            badges: user.badges
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -127,4 +149,50 @@ const updateUserProfile = async (req, res) => {
     }
 };
 
-module.exports = { getUserProfile, updateUserProfile };
+// @desc    Add course to wishlist
+// @route   POST /api/users/wishlist/add
+// @access  Private
+const addToWishlist = async (req, res) => {
+    try {
+        const { courseId } = req.body;
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.wishlist.includes(courseId)) {
+            return res.status(400).json({ message: 'Course already in wishlist' });
+        }
+
+        user.wishlist.push(courseId);
+        await user.save();
+
+        res.json({ message: 'Course added to wishlist', wishlist: user.wishlist });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Remove course from wishlist
+// @route   DELETE /api/users/wishlist/remove/:courseId
+// @access  Private
+const removeFromWishlist = async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.wishlist = user.wishlist.filter(id => id.toString() !== courseId);
+        await user.save();
+
+        res.json({ message: 'Course removed from wishlist', wishlist: user.wishlist });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getUserProfile, updateUserProfile, addToWishlist, removeFromWishlist };

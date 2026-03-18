@@ -1,5 +1,6 @@
 const Quiz = require('../models/Quiz');
 const CompletedQuiz = require('../models/CompletedQuiz');
+const { awardXP } = require('../utils/xpSystem');
 
 
 exports.getQuizzes = async (req, res) => {
@@ -111,7 +112,16 @@ exports.submitQuiz = async (req, res) => {
 
         await completedQuiz.save();
 
-        res.status(201).json(completedQuiz);
+        // Award 100 XP if passed
+        let gamification = null;
+        if (passed) {
+            gamification = await awardXP(req.user._id, 100);
+        }
+
+        res.status(201).json({
+            ...completedQuiz._doc,
+            gamification
+        });
     } catch (error) {
         console.error('Submit Quiz Error:', error);
         res.status(500).json({ message: 'Error submitting quiz', error: error.message });

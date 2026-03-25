@@ -45,6 +45,7 @@ import { InstructorProfile } from '@/dashboards/instructor/InstructorProfile';
 import { AdminDashboard } from '@/dashboards/admin/AdminDashboard';
 import { ManageStudents } from '@/dashboards/admin/ManageStudents';
 import { ManageInstructors } from '@/dashboards/admin/ManageInstructors';
+import { ManageCourses as AdminManageCourses } from '@/dashboards/admin/ManageCourses';
 import { PlatformAnalytics } from '@/dashboards/admin/PlatformAnalytics';
 import { SystemSettings } from '@/dashboards/admin/SystemSettings';
 import { AdminRequests } from '@/dashboards/admin/AdminRequests';
@@ -97,6 +98,7 @@ export function AppRoutes() {
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/students" element={<ManageStudents />} />
       <Route path="/admin/instructors" element={<ManageInstructors />} />
+      <Route path="/admin/courses" element={<AdminManageCourses />} />
       <Route path="/admin/requests" element={<AdminRequests />} />
       <Route path="/admin/analytics" element={<PlatformAnalytics />} />
       <Route path="/admin/settings" element={<SystemSettings />} />

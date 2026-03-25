@@ -59,6 +59,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
     { label: 'Admin Panel', href: '/admin/dashboard', icon: ShieldCheck },
     { label: 'Students', href: '/admin/students', icon: GraduationCap },
     { label: 'Instructors', href: '/admin/instructors', icon: Users },
+    { label: 'Courses', href: '/admin/courses', icon: BookOpen },
     { label: 'Requests', href: '/admin/requests', icon: ClipboardList },
     { label: 'System Analytics', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Site Settings', href: '/admin/settings', icon: Settings },

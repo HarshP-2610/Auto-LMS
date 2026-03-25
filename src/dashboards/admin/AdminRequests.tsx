@@ -11,7 +11,12 @@ import {
     X,
     Loader2,
     ArrowRight,
-    Star
+    Star,
+    Mail,
+    Phone,
+    Briefcase,
+    GraduationCap,
+    FileText
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -37,6 +42,10 @@ export function AdminRequests() {
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [actionDialogOpen, setActionDialogOpen] = useState(false);
     const [action, setAction] = useState<'approve' | 'reject' | null>(null);
+
+    // App modal states
+    const [selectedApp, setSelectedApp] = useState<any | null>(null);
+    const [appViewDialogOpen, setAppViewDialogOpen] = useState(false);
 
     const fetchAllData = async () => {
         try {
@@ -277,6 +286,9 @@ export function AdminRequests() {
                                             </div>
 
                                             <div className="flex items-center gap-3">
+                                                <Button variant="outline" className="flex-1 h-11 rounded-xl border-gray-100 font-bold hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100" onClick={() => { setSelectedApp(app); setAppViewDialogOpen(true); }}>
+                                                    <Eye className="w-4 h-4 mr-2" /> View Details
+                                                </Button>
                                                 <Button className="flex-1 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-500/25 font-bold" onClick={() => handleAppApprove(app._id)}>
                                                     <Check className="w-4 h-4 mr-2" /> Enroll Faculty
                                                 </Button>
@@ -375,6 +387,94 @@ export function AdminRequests() {
                                 {action === 'approve' ? 'Seal & Publish' : 'Confirm Rejection'}
                             </Button>
                         </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Faculty App Modal Integration */}
+                <Dialog open={appViewDialogOpen} onOpenChange={setAppViewDialogOpen}>
+                    <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-gray-900 flex flex-col max-h-[90vh]">
+                        <div className="h-32 bg-gradient-to-r from-purple-800 to-indigo-900 relative shrink-0">
+                            <div className="absolute -bottom-12 left-8 flex items-end gap-6">
+                                <div className="w-28 h-28 rounded-[2rem] bg-white dark:bg-gray-900 p-2 shadow-2xl relative z-10">
+                                    <div className="w-full h-full rounded-[1.5rem] bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center font-black text-4xl text-white shadow-inner">
+                                        {selectedApp?.name?.charAt(0) || 'U'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-8 pt-16 pb-8 overflow-y-auto no-scrollbar space-y-8 flex-1">
+                            <div>
+                                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 hover:bg-purple-200 border-none font-bold uppercase text-[10px] mb-3 px-3 py-1">Faculty Application</Badge>
+                                <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{selectedApp?.name}</h2>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                                        <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email Address</p>
+                                        <p className="font-bold text-gray-900 dark:text-white truncate">{selectedApp?.email}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                                        <Phone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Contact Number</p>
+                                        <p className="font-bold text-gray-900 dark:text-white truncate">{selectedApp?.phone}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                                        <Briefcase className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Experience</p>
+                                        <p className="font-bold text-gray-900 dark:text-white truncate">{selectedApp?.workExperience} Years</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                                        <GraduationCap className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Expertise</p>
+                                        <p className="font-bold text-gray-900 dark:text-white truncate">{selectedApp?.areaOfExpertise}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                                    <BookOpen className="w-4 h-4 text-purple-500" /> Educational Details
+                                </h3>
+                                <div className="p-6 rounded-[2rem] bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed">
+                                    {selectedApp?.educationalDetails || 'No educational details provided.'}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-purple-500" /> Mission Statement
+                                </h3>
+                                <div className="p-6 rounded-[2rem] bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100/50 dark:border-purple-900/30 text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic">
+                                    "{selectedApp?.bio}"
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-4 shrink-0">
+                            <Button variant="outline" className="flex-1 h-14 rounded-2xl border-2 border-gray-200 dark:border-gray-700 font-bold hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-900/20" onClick={() => { setAppViewDialogOpen(false); handleAppReject(selectedApp?._id); }}>
+                                <X className="w-5 h-5 mr-2" /> Refuse Provider
+                            </Button>
+                            <Button className="flex-1 h-14 rounded-2xl bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/30 font-black text-lg text-white" onClick={() => { setAppViewDialogOpen(false); handleAppApprove(selectedApp?._id); }}>
+                                Enroll Faculty <ArrowRight className="w-5 h-5 ml-2" />
+                            </Button>
+                        </div>
                     </DialogContent>
                 </Dialog>
             </div>

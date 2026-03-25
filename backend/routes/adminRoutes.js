@@ -11,7 +11,8 @@ const {
     toggleUserStatus,
     getAllCourses,
     deleteCourse,
-    getAdminNotifications
+    getAdminNotifications,
+    deleteUser
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -47,6 +48,9 @@ router.route('/users')
 
 router.route('/users/:id/toggle-status')
     .put(protect, adminCheck, toggleUserStatus);
+
+router.route('/users/:id')
+    .delete(protect, adminCheck, deleteUser);
 
 router.route('/courses-all')
     .get(protect, adminCheck, getAllCourses);

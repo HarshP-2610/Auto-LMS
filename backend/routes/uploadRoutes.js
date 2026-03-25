@@ -57,7 +57,7 @@ const uploadVideo = multer({
 router.post('/image', protect, uploadImage.single('image'), (req, res) => {
     res.send({
         message: 'Image uploaded',
-        imagePath: `${req.file.filename}`,
+        imagePath: `/uploads/${req.file.filename}`,
     });
 });
 
@@ -67,7 +67,7 @@ router.post('/video', protect, uploadVideo.single('video'), (req, res) => {
     }
     res.send({
         message: 'Video uploaded',
-        videoPath: `${req.file.filename}`,
+        videoPath: `/uploads/${req.file.filename}`,
     });
 });
 

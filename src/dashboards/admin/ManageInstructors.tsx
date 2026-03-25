@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, MoreVertical, Ban, CheckCircle, UserCheck, Loader2, UserRoundCheck, Star, BookOpen } from 'lucide-react';
+import { Search, MoreVertical, Ban, CheckCircle, UserCheck, Loader2, UserRoundCheck, Star, BookOpen, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,8 @@ export function ManageInstructors() {
     const [statusDialogOpen, setStatusDialogOpen] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [pendingStatus, setPendingStatus] = useState<boolean | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [selectedUserIdToDelete, setSelectedUserIdToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         fetchUsers();
@@ -102,6 +104,38 @@ export function ManageInstructors() {
             setStatusDialogOpen(false);
             setSelectedUserId(null);
             setPendingStatus(null);
+        }
+    };
+
+    const handleDeleteInstructor = (userId: string) => {
+        setSelectedUserIdToDelete(userId);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!selectedUserIdToDelete) return;
+
+        try {
+            const response = await fetch(`http://localhost:5000/api/admin/users/${selectedUserIdToDelete}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                toast.success('Instructor deleted successfully');
+                setUsersList(usersList.filter(u => u._id !== selectedUserIdToDelete));
+            } else {
+                toast.error(data.message || 'Failed to delete instructor');
+            }
+        } catch (error) {
+            toast.error('An error occurred');
+        } finally {
+            setDeleteDialogOpen(false);
+            setSelectedUserIdToDelete(null);
         }
     };
 
@@ -254,6 +288,14 @@ export function ManageInstructors() {
                                                                 <span className="font-bold">Reactivate Access</span>
                                                             </DropdownMenuItem>
                                                         )}
+                                                        <div className="my-1 border-t border-gray-50"></div>
+                                                        <DropdownMenuItem
+                                                            className="rounded-xl px-3 py-2.5 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                                                            onClick={() => handleDeleteInstructor(user._id)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4 mr-2" />
+                                                            <span className="font-bold">Delete Instructor</span>
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </td>
@@ -294,6 +336,30 @@ export function ManageInstructors() {
                                 className={`flex-1 h-12 rounded-2xl font-black shadow-lg ${pendingStatus ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-500/25' : 'shadow-rose-500/25'}`}
                             >
                                 {pendingStatus ? 'Confirm Reactivation' : 'Execute Suspension'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <DialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8">
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl font-black tracking-tight text-red-600">Delete Educator</DialogTitle>
+                            <DialogDescription className="text-gray-500 pt-4 text-base leading-relaxed">
+                                Are you certain you want to permanently delete this instructor? This action cannot be undone and will permanently remove their access and data.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="gap-4 pt-8">
+                            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="flex-1 h-12 rounded-2xl border-2 border-gray-100 font-bold hover:bg-gray-50">
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={confirmDelete}
+                                className="flex-1 h-12 rounded-2xl font-black shadow-lg shadow-red-500/25 bg-red-600 hover:bg-red-700"
+                            >
+                                Confirm Deletion
                             </Button>
                         </DialogFooter>
                     </DialogContent>

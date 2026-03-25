@@ -140,7 +140,7 @@ export function StudentProfile() {
 
     try {
       const token = localStorage.getItem('userToken');
-      const res = await fetch('http://localhost:5000/api/upload', {
+      const res = await fetch('http://localhost:5000/api/upload/image', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

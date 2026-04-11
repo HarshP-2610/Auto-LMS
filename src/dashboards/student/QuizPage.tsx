@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 export function QuizPage() {
   const { id } = useParams<{ id: string }>();
   const isFinal = new URLSearchParams(window.location.search).get('type') === 'final';
+  const isExtra = new URLSearchParams(window.location.search).get('type') === 'extra';
 
   const [quiz, setQuiz] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,9 @@ export function QuizPage() {
       try {
         const url = isFinal
           ? `http://localhost:5000/api/final-assessments/${id}`
-          : `http://localhost:5000/api/quizzes/${id}`;
+          : isExtra
+            ? `http://localhost:5000/api/extra-quizzes/${id}`
+            : `http://localhost:5000/api/quizzes/${id}`;
 
         const response = await fetch(url, {
           headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
@@ -130,7 +133,9 @@ export function QuizPage() {
     try {
       const url = isFinal
         ? 'http://localhost:5000/api/final-assessments/submit'
-        : 'http://localhost:5000/api/quizzes/submit';
+        : isExtra
+          ? 'http://localhost:5000/api/extra-quizzes/submit'
+          : 'http://localhost:5000/api/quizzes/submit';
 
       const body = isFinal
         ? { assessmentId: id, answers: selectedAnswers }

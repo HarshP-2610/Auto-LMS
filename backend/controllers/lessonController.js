@@ -45,7 +45,49 @@ const addLesson = async (req, res) => {
 const getCourseLessons = async (req, res) => {
     try {
         const lessons = await Lesson.find({ course: req.params.courseId }).sort('order');
-        res.status(200).json({ success: true, data: lessons });
+        
+        // For each lesson, fetch the count of topics and calculate total duration
+        const lessonsWithStats = await Promise.all(lessons.map(async (lesson) => {
+            const topics = await Topic.find({ lesson: lesson._id });
+            const topicsCount = topics.length;
+
+            // Calculate total duration
+            let totalMinutes = 0;
+            topics.forEach(topic => {
+                const dur = topic.duration || '0';
+                if (dur.includes(':')) {
+                    const parts = dur.split(':');
+                    if (parts.length === 2) {
+                        totalMinutes += parseInt(parts[0]) + (parseInt(parts[1]) / 60);
+                    } else if (parts.length === 3) {
+                        totalMinutes += parseInt(parts[0]) * 60 + parseInt(parts[1]) + (parseInt(parts[2]) / 60);
+                    }
+                } else {
+                    const mins = parseInt(dur);
+                    if (!isNaN(mins)) totalMinutes += mins;
+                }
+            });
+
+            // Format duration string
+            let durationStr = '0m';
+            if (totalMinutes > 0) {
+                if (totalMinutes >= 60) {
+                    const h = Math.floor(totalMinutes / 60);
+                    const m = Math.round(totalMinutes % 60);
+                    durationStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
+                } else {
+                    durationStr = `${Math.round(totalMinutes)}m`;
+                }
+            }
+
+            return {
+                ...lesson.toObject(),
+                topicsCount,
+                duration: durationStr
+            };
+        }));
+
+        res.status(200).json({ success: true, data: lessonsWithStats });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

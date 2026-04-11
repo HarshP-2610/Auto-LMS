@@ -14,6 +14,7 @@ import {
     CheckCircle2,
     Plus,
     Trash2,
+    Edit,
     FileQuestion,
     Clock,
     CheckCircle,
@@ -45,6 +46,7 @@ export function CreateAssessmentModal({
 }: CreateAssessmentModalProps) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -112,6 +114,45 @@ export function CreateAssessmentModal({
         const updated = [...formData.questions];
         updated.splice(index, 1);
         setFormData({ ...formData, questions: updated });
+        if (editingQuestionIndex === index) {
+            cancelEdit();
+        } else if (editingQuestionIndex !== null && editingQuestionIndex > index) {
+            setEditingQuestionIndex(editingQuestionIndex - 1);
+        }
+    };
+
+    const startEditQuestion = (index: number) => {
+        const question = formData.questions[index];
+        setCurrentQuestion({
+            text: question.text,
+            options: [...question.options],
+            correctOptionIndex: question.correctOptionIndex
+        });
+        setEditingQuestionIndex(index);
+    };
+
+    const updateQuestion = () => {
+        if (!currentQuestion.text.trim() || currentQuestion.options.some(o => !o.trim())) {
+            toast.error("Please fill all question fields and options");
+            return;
+        }
+
+        const updatedQuestions = [...formData.questions];
+        updatedQuestions[editingQuestionIndex!] = currentQuestion;
+
+        setFormData(prev => ({
+            ...prev,
+            questions: updatedQuestions
+        }));
+
+        setCurrentQuestion({ text: '', options: ['', '', '', ''], correctOptionIndex: 0 });
+        setEditingQuestionIndex(null);
+        toast.success("Question updated!");
+    };
+
+    const cancelEdit = () => {
+        setCurrentQuestion({ text: '', options: ['', '', '', ''], correctOptionIndex: 0 });
+        setEditingQuestionIndex(null);
     };
 
     const handleSubmit = async () => {
@@ -256,12 +297,22 @@ export function CreateAssessmentModal({
 
                                 {formData.questions.map((q, qIdx) => (
                                     <div key={qIdx} className="group relative bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 transition-all hover:shadow-md">
-                                        <button
-                                            onClick={() => removeQuestion(qIdx)}
-                                            className="absolute top-4 right-4 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => startEditQuestion(qIdx)}
+                                                className="text-gray-400 hover:text-blue-500 transition-colors"
+                                                title="Edit Question"
+                                            >
+                                                <Edit className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                                onClick={() => removeQuestion(qIdx)}
+                                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                                title="Remove Question"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
                                         <p className="text-sm font-bold text-gray-900 dark:text-white mb-2 pr-8">{qIdx + 1}. {q.text}</p>
                                         <div className="grid grid-cols-2 gap-2">
                                             {q.options.map((opt: string, oIdx: number) => (
@@ -277,7 +328,9 @@ export function CreateAssessmentModal({
                             {/* Add Question Form */}
                             <div className="p-5 rounded-2xl border-2 border-dashed border-purple-100 dark:border-purple-900/30 bg-purple-50/30 dark:bg-purple-900/5 space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-purple-600">New Question</Label>
+                                    <Label className={`text-xs font-bold uppercase tracking-wider ${editingQuestionIndex !== null ? 'text-blue-600' : 'text-purple-600'}`}>
+                                        {editingQuestionIndex !== null ? 'Edit Question' : 'New Question'}
+                                    </Label>
                                     <Input
                                         placeholder="Enter the question text..."
                                         value={currentQuestion.text}
@@ -306,13 +359,25 @@ export function CreateAssessmentModal({
                                         ))}
                                     </div>
                                 </div>
-                                <Button
-                                    onClick={addQuestion}
-                                    variant="outline"
-                                    className="w-full h-11 border-purple-200 text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-xl"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" /> Add Question to Assessment
-                                </Button>
+                                <div className="flex gap-2">
+                                    {editingQuestionIndex !== null && (
+                                        <Button
+                                            onClick={cancelEdit}
+                                            variant="ghost"
+                                            className="flex-1 h-11 text-gray-500 rounded-xl"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    )}
+                                    <Button
+                                        onClick={editingQuestionIndex !== null ? updateQuestion : addQuestion}
+                                        variant="outline"
+                                        className={`flex-[2] h-11 ${editingQuestionIndex !== null ? 'border-blue-200 text-blue-600 hover:bg-blue-50' : 'border-purple-200 text-purple-600 hover:bg-purple-100'} dark:hover:bg-purple-900/20 rounded-xl transition-all`}
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        {editingQuestionIndex !== null ? 'Update Question' : 'Add Question to Assessment'}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}

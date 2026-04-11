@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Search, MoreVertical, Ban, CheckCircle, UserCheck, Loader2, UserRoundCheck, Star, BookOpen, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, MoreVertical, Ban, CheckCircle, UserCheck, Loader2, UserRoundCheck, Star, BookOpen, Trash2, Mail, Phone, Calendar, Wallet, Award, Fingerprint } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,11 +29,17 @@ interface User {
     isActive: boolean;
     createdAt: string;
     instructorTitle?: string;
+    instructorBio?: string;
     rating?: number;
+    numReviews?: number;
     taughtCourses?: string[];
+    expertise?: string[];
+    phone?: string;
+    earnings?: number;
 }
 
 export function ManageInstructors() {
+    const navigate = useNavigate();
     const [usersList, setUsersList] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +48,8 @@ export function ManageInstructors() {
     const [pendingStatus, setPendingStatus] = useState<boolean | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedUserIdToDelete, setSelectedUserIdToDelete] = useState<string | null>(null);
+    const [inspectDialogOpen, setInspectDialogOpen] = useState(false);
+    const [selectedInstructorForInspect, setSelectedInstructorForInspect] = useState<User | null>(null);
 
     useEffect(() => {
         fetchUsers();
@@ -110,6 +119,16 @@ export function ManageInstructors() {
     const handleDeleteInstructor = (userId: string) => {
         setSelectedUserIdToDelete(userId);
         setDeleteDialogOpen(true);
+    };
+
+    const handleInspectPortfolio = (user: User) => {
+        setSelectedInstructorForInspect(user);
+        setInspectDialogOpen(true);
+    };
+
+    const handleManageCurriculum = (userName: string) => {
+        // Redirect to Manage Courses page with instructor name as query
+        navigate(`/admin/courses?search=${encodeURIComponent(userName)}`);
     };
 
     const confirmDelete = async () => {
@@ -262,11 +281,17 @@ export function ManageInstructors() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-2xl border-gray-100">
-                                                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 cursor-pointer font-semibold">
+                                                        <DropdownMenuItem 
+                                                            className="rounded-xl px-3 py-2.5 cursor-pointer font-semibold"
+                                                            onClick={() => handleInspectPortfolio(user)}
+                                                        >
                                                             <UserCheck className="w-4 h-4 mr-2 text-purple-600" />
                                                             Inspect Portfolio
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="rounded-xl px-3 py-2.5 cursor-pointer font-semibold">
+                                                        <DropdownMenuItem 
+                                                            className="rounded-xl px-3 py-2.5 cursor-pointer font-semibold"
+                                                            onClick={() => handleManageCurriculum(user.name)}
+                                                        >
                                                             <BookOpen className="w-4 h-4 mr-2 text-indigo-500" />
                                                             Manage Curriculum
                                                         </DropdownMenuItem>
@@ -362,6 +387,158 @@ export function ManageInstructors() {
                                 Confirm Deletion
                             </Button>
                         </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                {/* Portfolio Inspection Dialog */}
+                <Dialog open={inspectDialogOpen} onOpenChange={setInspectDialogOpen}>
+                    <DialogContent className="sm:max-w-[650px] w-[95vw] h-[85vh] rounded-[3rem] border-none shadow-[0_32px_64px_-15px_rgba(0,0,0,0.3)] p-0 overflow-hidden bg-white dark:bg-gray-900 flex flex-col">
+                        {selectedInstructorForInspect && (
+                            <div className="flex flex-col h-full overflow-hidden">
+                                {/* Atmospheric Header */}
+                                <div className="p-10 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 relative flex-shrink-0 overflow-hidden">
+                                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+                                    <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
+                                        <div className="w-28 h-28 bg-white/20 backdrop-blur-xl rounded-[2.5rem] p-1.5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] flex-shrink-0">
+                                            <div className="w-full h-full bg-white dark:bg-gray-900 rounded-[2rem] flex items-center justify-center text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 shadow-inner">
+                                                {selectedInstructorForInspect.name.charAt(0)}
+                                            </div>
+                                        </div>
+                                        <div className="text-white">
+                                            <h2 className="text-3xl font-black drop-shadow-xl tracking-tight mb-3">
+                                                {selectedInstructorForInspect.name}
+                                            </h2>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <Badge className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border-none text-[10px] font-black uppercase tracking-widest px-4 py-1.5 shadow-sm">
+                                                    {selectedInstructorForInspect.instructorTitle || 'Elite Faculty'}
+                                                </Badge>
+                                                <Badge className={`bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border-none text-[10px] font-black uppercase tracking-widest px-4 py-1.5 shadow-sm`}>
+                                                    {selectedInstructorForInspect.isActive ? 'Active Status' : 'Account Suspended'}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Scrollable Content Area */}
+                                <div className="flex-1 overflow-y-auto px-10 py-10 custom-scrollbar scroll-smooth">
+                                    <div className="space-y-7 pb-4">
+                                        {/* Performance Stats Grid */}
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-3xl border border-amber-100 dark:border-amber-900/30 text-center group hover:scale-[1.02] transition-transform">
+                                                <p className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                                                    <Star className="w-3 h-3 fill-amber-500" /> Professional Rating
+                                                </p>
+                                                <p className="text-xl font-black text-amber-700 dark:text-amber-300">
+                                                    {selectedInstructorForInspect.rating?.toFixed(1) || '5.0'}
+                                                </p>
+                                            </div>
+                                            <div className="bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-3xl border border-indigo-100 dark:border-indigo-900/30 text-center group hover:scale-[1.02] transition-transform">
+                                                <p className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                                                    <BookOpen className="w-3 h-3" /> Active Courses
+                                                </p>
+                                                <p className="text-xl font-black text-indigo-700 dark:text-indigo-300">
+                                                    {selectedInstructorForInspect.taughtCourses?.length || 0}
+                                                </p>
+                                            </div>
+                                            <div className="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-3xl border border-purple-100 dark:border-purple-900/30 text-center group hover:scale-[1.02] transition-transform">
+                                                <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                                                    <Calendar className="w-3 h-3" /> Career Start
+                                                </p>
+                                                <p className="text-sm font-black text-purple-700 dark:text-purple-300 py-1">
+                                                    {selectedInstructorForInspect.createdAt ? new Date(selectedInstructorForInspect.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Biography Section */}
+                                        <div className="relative group">
+                                            <div className="absolute -left-4 top-0 bottom-0 w-1 bg-purple-100 dark:bg-purple-900/30 rounded-full"></div>
+                                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                <Award className="w-4 h-4 text-purple-500" />
+                                                Professional Biography
+                                            </h4>
+                                            <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed italic bg-gray-50 dark:bg-gray-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-inner">
+                                                "{selectedInstructorForInspect.instructorBio || 'This instructor has not provided a professional biography yet.'}"
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            {/* Expertise */}
+                                            <div className="space-y-4">
+                                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                    <Fingerprint className="w-4 h-4 text-indigo-500" />
+                                                    Core Expertise
+                                                </h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {selectedInstructorForInspect.expertise && selectedInstructorForInspect.expertise.length > 0 ? (
+                                                        selectedInstructorForInspect.expertise.map((skill, index) => (
+                                                            <span key={index} className="px-4 py-1.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[10px] font-black rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:border-purple-300 transition-colors uppercase tracking-wider">
+                                                                {skill}
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-[10px] text-gray-400 font-bold italic">No domain expertise specified.</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Financials */}
+                                            <div className="space-y-4">
+                                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                                    <Wallet className="w-4 h-4 text-emerald-500" />
+                                                    Revenue Metrics
+                                                </h4>
+                                                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-5 rounded-[2rem] shadow-lg shadow-emerald-500/20 text-white">
+                                                    <p className="text-[10px] font-black text-emerald-100 uppercase tracking-widest mb-1 opacity-80">Accumulated Earnings</p>
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-3xl font-black">${selectedInstructorForInspect.earnings?.toLocaleString() || '0'}</span>
+                                                        <span className="text-[10px] font-bold text-emerald-100">USD</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Contact Footer */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-6">
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-10 h-10 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                                                    <Mail className="w-5 h-5 text-purple-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Corporate Email</p>
+                                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-200 truncate">{selectedInstructorForInspect.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-10 h-10 rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                                                    <Phone className="w-5 h-5 text-indigo-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Mobile Contact</p>
+                                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-200">{selectedInstructorForInspect.phone || 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex gap-3 flex-shrink-0">
+                                    <Button 
+                                        variant="outline"
+                                        className="h-12 rounded-2xl flex-1 border-2 border-gray-100 hover:bg-gray-50 font-bold uppercase tracking-widest text-[10px] transition-all"
+                                        onClick={() => setInspectDialogOpen(false)}
+                                    >
+                                        Close
+                                    </Button>
+                                    <Button 
+                                        className="h-12 rounded-2xl flex-[1.5] bg-gray-900 hover:bg-black text-white font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-gray-900/10 transition-all active:scale-95"
+                                        onClick={() => handleManageCurriculum(selectedInstructorForInspect.name)}
+                                    >
+                                        Explore Curriculum
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </DialogContent>
                 </Dialog>
             </div>

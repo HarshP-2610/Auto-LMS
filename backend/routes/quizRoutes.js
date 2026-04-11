@@ -3,7 +3,10 @@ const router = express.Router();
 const quizController = require('../controllers/quizController');
 const { protect, instructorOrAdmin } = require('../middleware/authMiddleware');
 
-router.use(protect);
+router.use((req, res, next) => {
+    const { protect } = require('../middleware/authMiddleware');
+    return protect(req, res, next);
+});
 
 router.get('/', quizController.getQuizzes);
 router.post('/', instructorOrAdmin, quizController.createQuiz);

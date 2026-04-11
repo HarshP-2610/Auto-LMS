@@ -58,6 +58,7 @@ app.use('/api/lessons', require('./routes/lessonRoutes'));
 app.use('/api/topics', require('./routes/topicRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/quizzes', require('./routes/quizRoutes'));
+app.use('/api/extra-quizzes', require('./routes/extraQuizRoutes'));
 app.use('/api/progress', require('./routes/progressRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/final-assessments', require('./routes/finalAssessmentRoutes'));

@@ -75,7 +75,6 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: 
         category: '',
         difficulty: '',
         price: '',
-        duration: '',
         thumbnail: '',
     });
 
@@ -88,7 +87,6 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: 
                 category: courseToEdit.category || '',
                 difficulty: courseToEdit.difficulty || '',
                 price: courseToEdit.price?.toString() || '',
-                duration: courseToEdit.duration || '',
                 thumbnail: courseToEdit.thumbnail || '',
             });
         } else {
@@ -99,7 +97,6 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: 
                 category: '',
                 difficulty: '',
                 price: '',
-                duration: '',
                 thumbnail: '',
             });
         }
@@ -150,7 +147,6 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: 
                     category: '',
                     difficulty: '',
                     price: '',
-                    duration: '',
                     thumbnail: '',
                 });
                 setStep(1);
@@ -257,17 +253,10 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: 
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="duration" className="text-sm font-semibold text-gray-700 dark:text-gray-300">Course Duration</Label>
-                                <div className="relative">
-                                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <Input
-                                        id="duration"
-                                        name="duration"
-                                        placeholder="e.g., 12 hours"
-                                        value={formData.duration}
-                                        onChange={handleChange}
-                                        className="h-11 pl-9 rounded-xl border-gray-200 focus:ring-purple-500 focus:border-purple-500"
-                                    />
+                                <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Course Duration</Label>
+                                <div className="relative flex items-center h-11 px-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                                    <Clock className="w-4 h-4 text-gray-400 mr-2" />
+                                    <span className="text-sm text-gray-500 dark:text-gray-400 italic">Auto-calculated from lessons</span>
                                 </div>
                             </div>
                         </div>
@@ -347,9 +336,9 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: 
                                 </div>
                                 <div>
                                     <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Duration</h4>
-                                    <p className="text-sm font-semibold mt-1 flex items-center gap-2">
+                                    <p className="text-sm font-semibold mt-1 flex items-center gap-2 text-blue-600">
                                         <Clock className="w-3 h-3 text-blue-500" />
-                                        {formData.duration}
+                                        Auto-calculated
                                     </p>
                                 </div>
                             </div>
@@ -410,7 +399,7 @@ export function CreateCourseModal({ isOpen, onClose, onSuccess, courseToEdit }: 
                                 onClick={nextStep}
                                 disabled={
                                     (step === 1 && (!formData.title || !formData.description)) ||
-                                    (step === 2 && (!formData.category || !formData.difficulty || !formData.price || !formData.duration))
+                                    (step === 2 && (!formData.category || !formData.difficulty || !formData.price))
                                 }
                                 className="rounded-xl px-8 bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-500/25 ml-auto font-bold transition-all active:scale-95"
                             >

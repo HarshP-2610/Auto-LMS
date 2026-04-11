@@ -30,7 +30,7 @@ const courseSchema = new mongoose.Schema({
     },
     duration: {
         type: String,
-        required: [true, 'Please add course duration'],
+        default: '0m',
     },
     lessonsCount: {
         type: Number,

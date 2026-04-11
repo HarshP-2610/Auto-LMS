@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, MoreVertical, Ban, CheckCircle, UserCheck, Loader2, Users } from 'lucide-react';
+import { Search, MoreVertical, Ban, CheckCircle, Loader2, Users, GraduationCap, Trophy, TrendingUp, Clock, BookOpen, CheckCircle2, History } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,9 @@ export function ManageStudents() {
     const [statusDialogOpen, setStatusDialogOpen] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [pendingStatus, setPendingStatus] = useState<boolean | null>(null);
+    const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+    const [studentProgress, setStudentProgress] = useState<any>(null);
+    const [progressLoading, setProgressLoading] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -71,6 +74,30 @@ export function ManageStudents() {
         setSelectedUserId(userId);
         setPendingStatus(!currentStatus);
         setStatusDialogOpen(true);
+    };
+
+    const fetchStudentProgress = async (studentId: string) => {
+        setProgressLoading(true);
+        setProgressDialogOpen(true);
+        try {
+            const response = await fetch(`http://localhost:5000/api/admin/users/${studentId}/progress`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setStudentProgress(data);
+            } else {
+                toast.error(data.message || 'Failed to fetch student progress');
+                setProgressDialogOpen(false);
+            }
+        } catch (error) {
+            toast.error('An error occurred');
+            setProgressDialogOpen(false);
+        } finally {
+            setProgressLoading(false);
+        }
     };
 
     const confirmToggleStatus = async () => {
@@ -203,8 +230,11 @@ export function ManageStudents() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl shadow-xl border-gray-100">
-                                                        <DropdownMenuItem className="rounded-xl px-3 py-2 cursor-pointer">
-                                                            <UserCheck className="w-4 h-4 mr-2 text-blue-500" />
+                                                        <DropdownMenuItem 
+                                                            className="rounded-xl px-3 py-2 cursor-pointer"
+                                                            onClick={() => fetchStudentProgress(user._id)}
+                                                        >
+                                                            <TrendingUp className="w-4 h-4 mr-2 text-blue-500" />
                                                             <span className="text-sm font-medium">View Progress</span>
                                                         </DropdownMenuItem>
                                                         {user.isActive ? (
@@ -267,6 +297,118 @@ export function ManageStudents() {
                                 {pendingStatus ? 'Restore Access' : 'Restrict User'}
                             </Button>
                         </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                {/* Student Progress Dialog */}
+                <Dialog open={progressDialogOpen} onOpenChange={setProgressDialogOpen}>
+                    <DialogContent className="sm:max-w-[700px] max-h-[85vh] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden flex flex-col">
+                        {progressLoading ? (
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+                                <p className="text-gray-500 font-medium">Analyzing learning metrics...</p>
+                            </div>
+                        ) : studentProgress ? (
+                            <>
+                                <DialogHeader className="p-8 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-2xl font-black">
+                                            {studentProgress.student.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <DialogTitle className="text-2xl font-black">{studentProgress.student.name}'s Academic Report</DialogTitle>
+                                            <DialogDescription className="text-blue-100 font-medium">
+                                                Enrolled in {studentProgress.progress?.length || 0} Professional Courses
+                                            </DialogDescription>
+                                        </div>
+                                    </div>
+                                </DialogHeader>
+
+                                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                    <div className="space-y-8">
+                                        {studentProgress.progress && studentProgress.progress.length > 0 ? (
+                                            studentProgress.progress.map((course: any) => (
+                                                <div key={course.courseId} className="space-y-4">
+                                                    <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+                                                        <div>
+                                                            <h4 className="font-black text-gray-900 dark:text-white flex items-center gap-2">
+                                                                <BookOpen className="w-4 h-4 text-blue-600" />
+                                                                {course.courseTitle}
+                                                            </h4>
+                                                            <p className="text-xs text-gray-400 font-bold uppercase tracking-tighter mt-1">
+                                                                Instructor: {course.instructorName}
+                                                            </p>
+                                                        </div>
+                                                        <Badge className={`${course.isCompleted ? 'bg-green-500' : 'bg-blue-500'} font-bold`}>
+                                                            {course.percentComplete}% Complete
+                                                        </Badge>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {/* Progress Meter */}
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+                                                                <TrendingUp className="w-3 h-3" />
+                                                                Curriculum Coverage
+                                                            </p>
+                                                            <div className="w-full h-3 bg-white dark:bg-gray-900 rounded-full overflow-hidden border border-gray-100 dark:border-gray-700">
+                                                                <div 
+                                                                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-1000" 
+                                                                    style={{ width: `${course.percentComplete}%` }}
+                                                                ></div>
+                                                            </div>
+                                                            {course.isCompleted && course.completionDate && (
+                                                                <p className="text-[10px] text-green-600 font-black mt-2 flex items-center gap-1">
+                                                                    <Trophy className="w-3 h-3" />
+                                                                    CERTIFICATE EARNED ON {new Date(course.completionDate).toLocaleDateString()}
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Quiz Stats */}
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+                                                                <History className="w-3 h-3" />
+                                                                Assessment History
+                                                            </p>
+                                                            <div className="space-y-2">
+                                                                {course.quizzes && course.quizzes.length > 0 ? (
+                                                                    course.quizzes.map((quiz: any) => (
+                                                                        <div key={quiz.quizId} className="flex items-center justify-between text-xs">
+                                                                            <span className="font-bold text-gray-600 dark:text-gray-400 truncate max-w-[120px]">
+                                                                                {quiz.quizTitle}
+                                                                            </span>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className={`font-black ${quiz.passed ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                    {quiz.score}%
+                                                                                </span>
+                                                                                {quiz.passed ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <Clock className="w-3 h-3 text-red-400" />}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))
+                                                                ) : (
+                                                                    <p className="text-[10px] text-gray-400 font-bold italic py-1">No assessments completed yet.</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+                                                <GraduationCap className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                                                <p className="text-gray-500 font-bold italic">Student has not started any learning modules yet.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                                    <Button onClick={() => setProgressDialogOpen(false)} className="h-12 px-10 rounded-2xl bg-gray-900 hover:bg-black text-white font-bold transition-all">
+                                        Close Intelligence Report
+                                    </Button>
+                                </div>
+                            </>
+                        ) : null}
                     </DialogContent>
                 </Dialog>
             </div>

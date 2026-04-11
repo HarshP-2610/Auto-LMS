@@ -251,6 +251,104 @@ const deleteUser = async (req, res) => {
     }
 };
 
+// @desc    Get full course details including lessons, topics and quizzes
+// @route   GET /api/admin/courses/:id/full-details
+// @access  Private/Admin
+const getFullCourseDetails = async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id).populate('instructor', 'name email');
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        const Lesson = require('../models/Lesson');
+        const Topic = require('../models/Topic');
+        const Quiz = require('../models/Quiz');
+
+        // Get all lessons
+        const lessons = await Lesson.find({ course: req.params.id }).sort('order');
+        
+        // Get all topics for these lessons
+        const lessonIds = lessons.map(l => l._id);
+        const topics = await Topic.find({ lesson: { $in: lessonIds } }).sort('order');
+
+        // Group topics by lesson
+        const lessonsWithTopics = lessons.map(lesson => {
+            return {
+                ...lesson.toObject(),
+                topics: topics.filter(t => t.lesson.toString() === lesson._id.toString())
+            };
+        });
+
+        // Get all quizzes
+        const quizzes = await Quiz.find({ course: req.params.id });
+
+        res.status(200).json({
+            course,
+            curriculum: lessonsWithTopics,
+            quizzes
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get detailed progress for a student across all enrolled courses
+// @route   GET /api/admin/users/:id/progress
+// @access  Private/Admin
+const getStudentProgress = async (req, res) => {
+    try {
+        const student = await User.findById(req.params.id);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        const Progress = require('../models/Progress');
+        const CompletedQuiz = require('../models/CompletedQuiz');
+
+        // 1. Get all courses this student is enrolled in
+        const enrolledCourses = await Course.find({ _id: { $in: student.enrolledCourses } })
+            .populate('instructor', 'name');
+
+        // 2. Fetch progress and quizzes for each course
+        const progressData = await Promise.all(enrolledCourses.map(async (course) => {
+            const progress = await Progress.findOne({ user: student._id, course: course._id });
+            const completedQuizzes = await CompletedQuiz.find({
+                user: student._id,
+                course: course._id
+            }).populate('quiz', 'title isFinalAssessment');
+
+            return {
+                courseId: course._id,
+                courseTitle: course.title,
+                instructorName: course.instructor?.name || 'Unknown',
+                percentComplete: progress ? progress.percentComplete : 0,
+                isCompleted: progress ? progress.isCompleted : false,
+                completionDate: progress ? progress.completionDate : null,
+                quizzes: completedQuizzes.map(q => ({
+                    quizId: q.quiz?._id,
+                    quizTitle: q.quiz?.title,
+                    isFinal: q.quiz?.isFinalAssessment,
+                    score: q.score,
+                    passed: q.passed,
+                    completedAt: q.completedAt
+                }))
+            };
+        }));
+
+        res.status(200).json({
+            student: {
+                name: student.name,
+                email: student.email,
+                avatar: student.avatar
+            },
+            progress: progressData
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getPendingInstructors,
     approveInstructor,
@@ -263,5 +361,7 @@ module.exports = {
     getAllCourses,
     deleteCourse,
     getAdminNotifications,
-    deleteUser
+    deleteUser,
+    getFullCourseDetails,
+    getStudentProgress
 };

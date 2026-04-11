@@ -17,9 +17,10 @@ import {
 interface NavbarProps {
   isDashboard?: boolean;
   userRole?: 'student' | 'instructor' | 'admin' | string;
+  transparentTheme?: 'light' | 'dark';
 }
 
-export function Navbar({ isDashboard = false, userRole: propUserRole = 'student' }: NavbarProps) {
+export function Navbar({ isDashboard = false, userRole: propUserRole = 'student', transparentTheme = 'light' }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userData, setUserData] = useState<{ name?: string; avatar?: string; role?: string } | null>(null);
@@ -112,7 +113,10 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
+              <span className={`text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${(!isScrolled && transparentTheme === 'dark')
+                  ? 'from-white to-gray-400'
+                  : 'from-gray-900 to-gray-600 dark:from-white dark:to-gray-400'
+                }`}>
                 Auto<span className="text-blue-600">LMS</span>
               </span>
             </Link>
@@ -140,7 +144,9 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
                   to={link.href}
                   className={`text-sm font-medium transition-all relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all hover:after:w-full ${location.pathname === link.href
                     ? 'text-blue-600 dark:text-blue-400 after:w-full'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                    : (!isScrolled && transparentTheme === 'dark')
+                      ? 'text-gray-300 hover:text-blue-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
                     }`}
                 >
                   {link.label}
@@ -159,7 +165,7 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
               {theme === 'dark' ? (
                 <Sun className="w-5 h-5 text-yellow-500" />
               ) : (
-                <Moon className="w-5 h-5 text-slate-700" />
+                <Moon className={`w-5 h-5 ${(!isScrolled && transparentTheme === 'dark') ? 'text-gray-300' : 'text-slate-700'}`} />
               )}
             </button>
 
@@ -169,7 +175,7 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="relative p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 group">
-                      <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:rotate-12 transition-transform" />
+                      <Bell className={`w-5 h-5 group-hover:rotate-12 transition-transform ${(!isScrolled && transparentTheme === 'dark') ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400'}`} />
                       {activeRole === 'admin' && notifications.length > 0 && (
                         <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"></span>
                       )}
@@ -222,7 +228,7 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
                       </div>
                       <div className="hidden lg:block text-left">
-                        <p className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[120px]">
+                        <p className={`text-xs font-bold truncate max-w-[120px] ${(!isScrolled && transparentTheme === 'dark') ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                           {userData?.name || 'User'}
                         </p>
                         <p className="text-[10px] uppercase tracking-wider font-bold text-blue-600 dark:text-blue-400">
@@ -261,7 +267,7 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-3">
-                <Button variant="ghost" asChild className="rounded-xl px-6 dark:text-gray-200 dark:hover:text-white dark:hover:bg-gray-800">
+                <Button variant="ghost" asChild className={`rounded-xl px-6 ${(!isScrolled && transparentTheme === 'dark') ? 'text-white hover:bg-white/10' : 'dark:text-gray-200 dark:hover:text-white dark:hover:bg-gray-800'}`}>
                   <Link to="/auth/login">Login</Link>
                 </Button>
                 <Button

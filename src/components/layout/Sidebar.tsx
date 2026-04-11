@@ -48,7 +48,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
     { label: 'Dashboard', href: '/instructor/dashboard', icon: LayoutDashboard },
     { label: 'My Courses', href: '/instructor/courses', icon: BookOpen },
     { label: 'Curriculum', href: '/instructor/lessons', icon: PlayCircle },
-    { label: 'Assessments', href: '/instructor/quizzes', icon: FileText },
+    { label: 'Quizzes', href: '/instructor/quizzes', icon: FileText },
     { label: 'Students', href: '/instructor/students', icon: GraduationCap },
     { label: 'Statistics', href: '/instructor/analytics', icon: TrendingUp },
     { label: 'Profile Settings', href: '/instructor/profile', icon: User },

@@ -1,8 +1,52 @@
 const Course = require('../models/Course');
+const Lesson = require('../models/Lesson');
+const Topic = require('../models/Topic');
 const User = require('../models/User');
 const Payment = require('../models/Payment');
 const fs = require('fs');
 const path = require('path');
+
+// Helper: Calculate course duration from all topic durations
+const calculateCourseDuration = async (courseId) => {
+    const lessons = await Lesson.find({ course: courseId });
+    const lessonIds = lessons.map(l => l._id);
+    const topics = await Topic.find({ lesson: { $in: lessonIds } });
+
+    let totalMinutes = 0;
+    topics.forEach(topic => {
+        const dur = topic.duration || '0';
+        if (dur.includes(':')) {
+            const parts = dur.split(':');
+            if (parts.length === 2) {
+                totalMinutes += parseInt(parts[0]) + (parseInt(parts[1]) / 60);
+            } else if (parts.length === 3) {
+                totalMinutes += parseInt(parts[0]) * 60 + parseInt(parts[1]) + (parseInt(parts[2]) / 60);
+            }
+        } else {
+            const mins = parseInt(dur);
+            if (!isNaN(mins)) totalMinutes += mins;
+        }
+    });
+
+    if (totalMinutes <= 0) return '0m';
+    if (totalMinutes >= 60) {
+        const h = Math.floor(totalMinutes / 60);
+        const m = Math.round(totalMinutes % 60);
+        return m > 0 ? `${h} Hr ${m}m` : `${h} Hr`;
+    }
+    return `${Math.round(totalMinutes)}m`;
+};
+
+// Helper: Enrich an array of courses with calculated duration and lesson count
+const enrichCoursesWithDuration = async (courses) => {
+    return Promise.all(courses.map(async (course) => {
+        const courseObj = course.toObject ? course.toObject() : { ...course };
+        const lessons = await Lesson.find({ course: courseObj._id });
+        courseObj.duration = await calculateCourseDuration(courseObj._id);
+        courseObj.lessonsCount = lessons.length;
+        return courseObj;
+    }));
+};
 
 // @desc    Create new course
 // @route   POST /api/courses
@@ -22,7 +66,7 @@ const createCourse = async (req, res) => {
             category,
             difficulty,
             price: Number(price) || 0,
-            duration,
+            duration: '0m',
             thumbnail: thumbnail || 'no-image.jpg',
             instructor: req.user._id,
         });
@@ -47,7 +91,8 @@ const createCourse = async (req, res) => {
 const getCourses = async (req, res) => {
     try {
         const courses = await Course.find({ status: 'published' }).populate('instructor', 'name avatar');
-        res.status(200).json({ success: true, data: courses });
+        const enrichedCourses = await enrichCoursesWithDuration(courses);
+        res.status(200).json({ success: true, data: enrichedCourses });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -59,7 +104,18 @@ const getCourses = async (req, res) => {
 const getMyCourses = async (req, res) => {
     try {
         const courses = await Course.find({ instructor: req.user._id });
-        res.status(200).json({ success: true, data: courses });
+        
+        // Auto-calculate duration for each course from topics
+        const coursesWithDuration = await Promise.all(courses.map(async (course) => {
+            const lessons = await Lesson.find({ course: course._id });
+            const calculatedDuration = await calculateCourseDuration(course._id);
+            const courseObj = course.toObject();
+            courseObj.duration = calculatedDuration;
+            courseObj.lessonsCount = lessons.length;
+            return courseObj;
+        }));
+        
+        res.status(200).json({ success: true, data: coursesWithDuration });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -70,12 +126,18 @@ const getMyCourses = async (req, res) => {
 // @access  Public
 const getCourse = async (req, res) => {
     try {
-        console.log('Fetching course with ID:', req.params.id);
         const course = await Course.findById(req.params.id).populate('instructor', 'name avatar');
         if (!course) {
             return res.status(404).json({ success: false, message: 'Course not found' });
         }
-        res.status(200).json({ success: true, data: course });
+
+        const lessons = await Lesson.find({ course: course._id });
+        const calculatedDuration = await calculateCourseDuration(course._id);
+
+        const courseData = course.toObject();
+        courseData.lessonsCount = lessons.length;
+        courseData.duration = calculatedDuration;
+        res.status(200).json({ success: true, data: courseData });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -131,7 +193,6 @@ const updateCourse = async (req, res) => {
                 category,
                 difficulty,
                 price: Number(price) || 0,
-                duration,
                 thumbnail,
                 status: 'pending' // Reset status to pending after edit for review
             },
@@ -152,23 +213,16 @@ const updateCourse = async (req, res) => {
 // @access  Public
 const getPopularCourses = async (req, res) => {
     try {
-        console.log('Inside getPopularCourses handler');
-        // Use aggregate to get random samples if possible, or just limit
-        const courses = await Course.find({ status: 'published' })
-            .populate('instructor', 'name avatar')
-            .limit(3);
-
-        // If we want truly random each time we can use aggregation $sample
-        // For simplicity and since there might be few courses, just limit is fine or:
         const randomCourses = await Course.aggregate([
             { $match: { status: 'published' } },
             { $sample: { size: 3 } }
         ]);
 
-        // Need to populate instructor after aggregate
+        // Populate instructor after aggregate
         const populatedCourses = await Course.populate(randomCourses, { path: 'instructor', select: 'name avatar' });
+        const enrichedCourses = await enrichCoursesWithDuration(populatedCourses);
 
-        res.status(200).json({ success: true, data: populatedCourses });
+        res.status(200).json({ success: true, data: enrichedCourses });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -377,10 +431,12 @@ const searchCourses = async (req, res) => {
             }
         }
 
+        const enrichedCourses = await enrichCoursesWithDuration(courses);
+
         res.status(200).json({
             success: true,
-            count: courses.length,
-            data: courses
+            count: enrichedCourses.length,
+            data: enrichedCourses
         });
     } catch (error) {
         console.error('Search error:', error.message);

@@ -14,18 +14,26 @@ export function QuizzesList() {
   useEffect(() => {
     const fetchQuizzesAndResults = async () => {
       try {
-        const [quizzesRes, resultsRes] = await Promise.all([
+        const [quizzesRes, extraRes, resultsRes, extraResultsRes] = await Promise.all([
           fetch('http://localhost:5000/api/quizzes', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
+          }),
+          fetch('http://localhost:5000/api/extra-quizzes', {
             headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
           }),
           fetch('http://localhost:5000/api/quizzes/completed/my-quizzes', {
             headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
+          }),
+          fetch('http://localhost:5000/api/extra-quizzes/completed/my-quizzes', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
           })
         ]);
 
-        if (quizzesRes.ok) {
+        if (quizzesRes.ok && extraRes.ok) {
           const apiQuizzes = await quizzesRes.json();
-          const mappedApi = apiQuizzes.map((q: any) => ({
+          const apiExtraQuizzes = await extraRes.json();
+          
+          const mappedRegular = apiQuizzes.map((q: any) => ({
             id: q._id,
             courseId: q.course?._id || q.course,
             courseTitle: q.course?.title || 'Unknown Course',
@@ -33,19 +41,30 @@ export function QuizzesList() {
             duration: q.duration,
             passingMarks: q.passingMarks,
             totalQuestions: q.questions?.length || 0,
-            questions: q.questions
+            questions: q.questions,
+            isExtra: false
           }));
 
-          if (mappedApi.length > 0) {
-            setQuizzesList(mappedApi);
-          } else {
-            setQuizzesList(mockQuizzes);
-          }
+          const mappedExtra = apiExtraQuizzes.map((q: any) => ({
+            id: q._id,
+            courseId: q.course?._id || q.course,
+            courseTitle: q.course?.title || 'Unknown Course',
+            title: q.title,
+            duration: q.duration,
+            passingMarks: q.passingMarks,
+            totalQuestions: q.questions?.length || 0,
+            questions: q.questions,
+            isExtra: true,
+            extraXP: q.extraXP
+          }));
+
+          setQuizzesList([...mappedRegular, ...mappedExtra]);
         }
 
-        if (resultsRes.ok) {
+        if (resultsRes.ok && extraResultsRes.ok) {
           const apiResults = await resultsRes.json();
-          setCompletedQuizzes(apiResults);
+          const apiExtraResults = await extraResultsRes.json();
+          setCompletedQuizzes([...apiResults, ...apiExtraResults]);
         }
       } catch (error) {
         console.error('Failed to fetch quizzes or results:', error);
@@ -166,9 +185,16 @@ export function QuizzesList() {
                       />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {quiz.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {quiz.title}
+                        </h3>
+                        {quiz.isExtra && (
+                          <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full">
+                            +{quiz.extraXP} XP Bonus
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         {quiz.courseTitle}
                       </p>
@@ -201,7 +227,7 @@ export function QuizzesList() {
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Link>
                     ) : (
-                      <Link to={`/student/quiz/${quiz.id}`}>
+                      <Link to={`/student/quiz/${quiz.id}${quiz.isExtra ? '?type=extra' : ''}`}>
                         Start Quiz
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Link>

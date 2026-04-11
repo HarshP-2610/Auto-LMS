@@ -171,7 +171,7 @@ export function CourseDetails() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <Navbar />
+      <Navbar transparentTheme="dark" />
 
       {/* Hero Section - Premium Dark Atmosphere */}
       <div className="relative pt-24 lg:pt-32 pb-20 overflow-hidden bg-slate-950">

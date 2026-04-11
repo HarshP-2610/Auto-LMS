@@ -307,7 +307,23 @@ export function ManageLessons() {
                   {selectedCourseData?.title || 'Select a course'}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {filteredLessons.length} lessons • {selectedCourseData?.duration || 0} total
+                  {filteredLessons.length} lessons • {(() => {
+                    let totalMins = 0;
+                    lessons.forEach((lesson: any) => {
+                      const dur = lesson.duration || '0';
+                      const hMatch = dur.match(/(\d+)\s*h/i);
+                      const mMatch = dur.match(/(\d+)\s*m/i);
+                      if (hMatch) totalMins += parseInt(hMatch[1]) * 60;
+                      if (mMatch) totalMins += parseInt(mMatch[1]);
+                    });
+                    if (totalMins <= 0) return '0m';
+                    if (totalMins >= 60) {
+                      const h = Math.floor(totalMins / 60);
+                      const m = totalMins % 60;
+                      return m > 0 ? `${h} Hr ${m}m` : `${h} Hr`;
+                    }
+                    return `${totalMins}m`;
+                  })()} total
                 </p>
               </div>
               <div className="relative">
@@ -343,7 +359,7 @@ export function ManageLessons() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{lesson.title}</h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Lesson Section • {topicsMap[lesson._id]?.length || 0} topics
+                        Lesson Section • {topicsMap[lesson._id]?.length ?? lesson.topicsCount ?? 0} topics • {lesson.duration || '0m'}
                       </p>
                     </div>
                     <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800">

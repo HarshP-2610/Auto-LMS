@@ -58,6 +58,8 @@ export function InstructorDashboard() {
     fetchInstructorData();
   }, []);
 
+  const totalStudentsCount = myDocs.reduce((acc, course) => acc + (course.enrolledStudents?.length || 0), 0);
+
   return (
     <DashboardLayout userRole="instructor">
       <div className="space-y-8">
@@ -91,7 +93,7 @@ export function InstructorDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Students"
-            value={instructorAnalytics.totalStudents.toLocaleString()}
+            value={totalStudentsCount.toLocaleString()}
             trend="up"
             trendValue="+12% this month"
             icon={Users}
@@ -194,7 +196,7 @@ export function InstructorDashboard() {
                         <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <Users className="w-4 h-4" />
-                            {course.enrolledStudents || 0}
+                            {course.enrolledStudents?.length || 0}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />

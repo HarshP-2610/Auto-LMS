@@ -54,10 +54,8 @@ export function ManageQuizzes() {
       ]);
 
       if (quizzesRes.ok && extraRes.ok) {
-        const regularQuizzes = await quizzesRes.json();
         const extraQuizzes = await extraRes.json();
-        setQuizzes([...regularQuizzes.map((q: any) => ({ ...q, type: 'regular' })),
-        ...extraQuizzes.map((q: any) => ({ ...q, type: 'extra', isExtraQuiz: true }))]);
+        setQuizzes(extraQuizzes.map((q: any) => ({ ...q, type: 'extra', isExtraQuiz: true })));
       }
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -84,7 +82,7 @@ export function ManageQuizzes() {
   }, []);
 
   const handleOpenCreate = () => {
-    setFormData({ title: '', course: '', duration: 15, passingMarks: 70, questions: [], isExtraQuiz: false, extraXP: 50 });
+    setFormData({ title: '', course: '', duration: 15, passingMarks: 70, questions: [], isExtraQuiz: true, extraXP: 50 });
     setIsEditing(false);
     setCurrentQuizId(null);
     setIsFinalMode(false);
@@ -213,7 +211,7 @@ export function ManageQuizzes() {
               Manage Quizzes
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Create and manage quizzes for your courses
+              Create and manage bonus extra quizzes for your students
             </p>
           </div>
           <Button

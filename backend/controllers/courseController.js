@@ -362,6 +362,102 @@ const getInstructorStudents = async (req, res) => {
     }
 };
 
+// @desc    Get detailed student progress for a specific student (For Instructor)
+// @route   GET /api/courses/instructor/students/:studentId
+// @access  Private (Instructor)
+const getStudentDetailsForInstructor = async (req, res) => {
+    try {
+        const studentId = req.params.studentId;
+        const instructorId = req.user._id;
+
+        // 1. Get the student
+        const student = await User.findById(studentId).select('name email avatar enrolledCourses');
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found' });
+        }
+
+        // 2. Get all courses taught by this instructor
+        const myCourses = await Course.find({ instructor: instructorId });
+        const myCourseIds = myCourses.map(c => c._id.toString());
+
+        // 3. Filter student's enrolled courses to only those taught by this instructor
+        const relevantCourseIds = student.enrolledCourses.filter(id => myCourseIds.includes(id.toString()));
+
+        const Progress = require('../models/Progress');
+        const CompletedQuiz = require('../models/CompletedQuiz');
+        const Lesson = require('../models/Lesson');
+        const Topic = require('../models/Topic');
+        const Quiz = require('../models/Quiz');
+
+        // 4. Fetch details for each relevant course
+        const detailedProgress = await Promise.all(relevantCourseIds.map(async (courseId) => {
+            const course = await Course.findById(courseId).select('title thumbnail category');
+            const progress = await Progress.findOne({ user: studentId, course: courseId });
+            
+            // Get all lessons and topics for this course
+            const lessons = await Lesson.find({ course: courseId }).sort('order');
+            const lessonIds = lessons.map(l => l._id);
+            const topics = await Topic.find({ lesson: { $in: lessonIds } }).sort('order');
+
+            // Map topics to their lessons and mark completion
+            const curriculum = lessons.map(lesson => {
+                const lessonTopics = topics.filter(t => t.lesson.toString() === lesson._id.toString());
+                return {
+                    id: lesson._id,
+                    title: lesson.title,
+                    topics: lessonTopics.map(topic => ({
+                        id: topic._id,
+                        title: topic.title,
+                        duration: topic.duration,
+                        isCompleted: progress ? progress.completedTopics.includes(topic._id) : false
+                    }))
+                };
+            });
+
+            // Get all completed quizzes for this course
+            const completedQuizzes = await CompletedQuiz.find({
+                user: studentId,
+                course: courseId
+            }).populate('quiz', 'title isExtraQuiz');
+
+            return {
+                id: course._id,
+                title: course.title,
+                thumbnail: course.thumbnail,
+                category: course.category,
+                percentComplete: progress ? progress.percentComplete : 0,
+                isCompleted: progress ? progress.isCompleted : false,
+                curriculum,
+                completedQuizzes: completedQuizzes.map(q => ({
+                    quizTitle: q.quiz?.title,
+                    isExtraQuiz: q.quiz?.isExtraQuiz,
+                    score: q.score,
+                    passed: q.passed,
+                    date: q.completedAt,
+                    totalQuestions: q.totalQuestions,
+                    correctAnswers: q.correctAnswers
+                }))
+            };
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                student: {
+                    id: student._id,
+                    name: student.name,
+                    email: student.email,
+                    avatar: student.avatar
+                },
+                courses: detailedProgress
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching student details:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // @desc    Search/filter courses
 // @route   GET /api/courses/search
 // @access  Public
@@ -454,6 +550,7 @@ module.exports = {
     getPopularCourses,
     enrollCourse,
     getInstructorStudents,
+    getStudentDetailsForInstructor,
     searchCourses
 };
 

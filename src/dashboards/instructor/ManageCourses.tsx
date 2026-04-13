@@ -246,7 +246,7 @@ export function ManageCourses() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
                           <Users className="w-4 h-4" />
-                          {course.enrolledStudents?.toLocaleString() || 0}
+                          {course.enrolledStudents?.length || 0}
                         </div>
                       </td>
                       <td className="px-6 py-4">

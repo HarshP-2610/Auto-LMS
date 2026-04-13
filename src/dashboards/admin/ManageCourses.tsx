@@ -292,7 +292,7 @@ export function ManageCourses() {
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300">
                                                         <Users className="w-3.5 h-3.5" />
-                                                        {course.enrolledStudents?.toLocaleString() || 0} students
+                                                        {course.enrolledStudents?.length || 0} students
                                                     </div>
                                                     <div className="flex items-center gap-1 text-sm">
                                                         <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />

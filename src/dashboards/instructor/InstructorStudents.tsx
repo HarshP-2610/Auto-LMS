@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Users,
     Search,
@@ -20,19 +21,12 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function InstructorStudents() {
+    const navigate = useNavigate();
     const [students, setStudents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchStudents = async () => {
@@ -134,7 +128,7 @@ export function InstructorStudents() {
                                         <div className="relative">
                                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-0.5 shadow-lg">
                                                 <img
-                                                    src={`http://localhost:5000/uploads/${student.avatar || 'no-photo.jpg'}`}
+                                                    src={student.avatar?.startsWith('http') ? student.avatar : `http://localhost:5000/uploads/${student.avatar || 'no-photo.jpg'}`}
                                                     alt={student.name}
                                                     className="w-full h-full rounded-[14px] object-cover bg-white"
                                                     onError={(e) => {
@@ -197,7 +191,7 @@ export function InstructorStudents() {
                                             variant="outline"
                                             size="sm"
                                             className="rounded-xl border-blue-100 text-blue-600 hover:bg-blue-50 flex items-center gap-2 font-bold px-4 h-11"
-                                            onClick={() => setSelectedStudent(student.id)}
+                                            onClick={() => navigate(`/instructor/students/${student.id}`)}
                                         >
                                             <Eye className="w-4 h-4" />
                                             View Details
@@ -213,145 +207,6 @@ export function InstructorStudents() {
                 )}
             </div>
 
-            {/* Student Details Modal */}
-            <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
-                <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-gray-900 border-none rounded-[2.5rem] shadow-2xl">
-                    {(() => {
-                        const student = students.find(s => s.id === selectedStudent);
-                        if (!student) return null;
-
-                        return (
-                            <div className="flex flex-col h-[85vh] md:h-[80vh]">
-                                {/* Modal Header */}
-                                <div className="relative p-8 pb-6 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10">
-                                    <div className="flex flex-col md:flex-row md:items-center gap-6">
-                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 p-0.5 shadow-xl">
-                                            <img
-                                                src={`http://localhost:5000/uploads/${student.avatar || 'no-photo.jpg'}`}
-                                                alt={student.name}
-                                                className="w-full h-full rounded-[14px] object-cover bg-white"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + student.name;
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="flex-1">
-                                            <DialogHeader>
-                                                <DialogTitle className="text-3xl font-black text-gray-900 dark:text-white font-outfit text-left">
-                                                    {student.name}
-                                                </DialogTitle>
-                                                <div className="flex flex-wrap items-center gap-4 mt-2">
-                                                    <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold bg-white dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-700 text-sm shadow-sm">
-                                                        <Mail className="w-4 h-4 text-blue-500" />
-                                                        {student.email}
-                                                    </span>
-                                                    <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold bg-white dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-700 text-sm shadow-sm">
-                                                        <BookOpen className="w-4 h-4 text-indigo-500" />
-                                                        {student.courses.length} Active Courses
-                                                    </span>
-                                                </div>
-                                            </DialogHeader>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Modal Content - Scrollable */}
-                                <ScrollArea className="flex-1 p-8">
-                                    <div className="space-y-8 pb-8">
-                                        {student.courses.map((course: any) => (
-                                            <div key={course.id} className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 p-6 md:p-8 shadow-sm hover:shadow-md transition-shadow">
-                                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-inner">
-                                                            <GraduationCap className="w-7 h-7" />
-                                                        </div>
-                                                        <div>
-                                                            <h4 className="text-xl font-bold text-gray-900 dark:text-white font-outfit">{course.title}</h4>
-                                                            <p className="text-gray-500 font-medium">LMS Assessment Course</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right flex flex-col items-end">
-                                                        <span className="text-3xl font-black text-blue-600 font-outfit leading-none">{course.percentComplete}%</span>
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">Course Progress</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="mb-8 relative h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 transition-all duration-1000 ease-out"
-                                                        style={{ width: `${course.percentComplete}%` }}
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center justify-between">
-                                                        <h5 className="font-outfit font-black text-gray-900 dark:text-white flex items-center gap-2 tracking-tight">
-                                                            <ClipboardList className="w-5 h-5 text-blue-500" />
-                                                            Assessment History
-                                                        </h5>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                                                {course.completedQuizzes.length} Attempts
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    {course.completedQuizzes.length === 0 ? (
-                                                        <div className="py-10 bg-gray-50/50 dark:bg-gray-800/20 rounded-[2rem] border border-dashed border-gray-200 dark:border-gray-700 text-center">
-                                                            <p className="text-gray-400 font-medium font-outfit">This student hasn't attempted any quizzes in this course yet.</p>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="grid gap-3">
-                                                            {course.completedQuizzes.map((quiz: any, qIdx: number) => (
-                                                                <div key={qIdx} className="flex items-center justify-between p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700/50 hover:border-blue-200 dark:hover:border-blue-900/30 transition-all group/quiz shadow-sm hover:shadow-md">
-                                                                    <div className="flex items-center gap-4">
-                                                                        {quiz.passed ? (
-                                                                            <div className="w-11 h-11 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 shadow-inner">
-                                                                                <CheckCircle className="w-5 h-5" />
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="w-11 h-11 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center text-red-600 shadow-inner">
-                                                                                <XCircle className="w-5 h-5" />
-                                                                            </div>
-                                                                        )}
-                                                                        <div>
-                                                                            <p className="font-bold text-gray-900 dark:text-white font-outfit tracking-tight">
-                                                                                {quiz.quizTitle || 'Assessment Module'}
-                                                                            </p>
-                                                                            <p className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
-                                                                                <Clock className="w-3.5 h-3.5" />
-                                                                                {new Date(quiz.date).toLocaleDateString()} at {new Date(quiz.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-8">
-                                                                        <div className="text-right">
-                                                                            <p className={`text-xl font-black font-outfit ${quiz.passed ? 'text-green-600' : 'text-red-600'}`}>
-                                                                                {quiz.score}%
-                                                                            </p>
-                                                                            <p className={`text-[10px] font-black uppercase tracking-widest ${quiz.passed ? 'text-green-500/60' : 'text-red-500/60'}`}>
-                                                                                {quiz.passed ? 'PASSED' : 'FAILED'}
-                                                                            </p>
-                                                                        </div>
-                                                                        <Button variant="ghost" size="sm" className="hidden group-hover/quiz:flex items-center gap-1.5 text-blue-600 bg-blue-50/50 rounded-xl hover:bg-blue-100 transition-all font-bold">
-                                                                            Review
-                                                                            <ArrowUpRight className="w-4 h-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </ScrollArea>
-                            </div>
-                        );
-                    })()}
-                </DialogContent>
-            </Dialog>
         </DashboardLayout>
     );
 }

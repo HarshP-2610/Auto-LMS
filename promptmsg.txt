@@ -1,0 +1,7 @@
+I have a problem where students cannot see their instructors in the Messages page even after purchasing a course.
+
+Example Case:
+Het Siddhpuriya (Student) purchased the course "Complete Graphic Designing Masterclass," which was created and published by Archi Patel (Instructor). However, the instructor does not show up in the student's message contact list.
+
+Requirement:
+I want the Messages page to automatically show the list of instructors for all courses a student has purchased. A student should be able to see and message any instructor from whom they have an active course enrollment. This list should be filtered so that students only see instructors they are academically linked to through their purchased courses.

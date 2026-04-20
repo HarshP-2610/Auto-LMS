@@ -440,6 +440,19 @@ const getStudentDetailsForInstructor = async (req, res) => {
             };
         }));
 
+        // 5. Fetch payment history for these courses
+        const payments = await Payment.find({
+            student: studentId,
+            course: { $in: relevantCourseIds }
+        }).populate('course', 'title');
+
+        // 6. Fetch completed extra quizzes
+        const CompletedExtraQuiz = require('../models/CompletedExtraQuiz');
+        const extraQuizzes = await CompletedExtraQuiz.find({
+            user: studentId,
+            course: { $in: relevantCourseIds }
+        }).populate('quiz', 'title');
+
         res.status(200).json({
             success: true,
             data: {
@@ -449,7 +462,33 @@ const getStudentDetailsForInstructor = async (req, res) => {
                     email: student.email,
                     avatar: student.avatar
                 },
-                courses: detailedProgress
+                courses: detailedProgress,
+                payments: payments.map(p => ({
+                    id: p._id,
+                    courseTitle: p.course?.title,
+                    amount: p.amount,
+                    status: p.status,
+                    date: p.createdAt,
+                    transactionId: p.transactionId,
+                    paymentMethod: p.paymentMethod
+                })),
+                extraQuizzes: extraQuizzes.map(eq => ({
+                    id: eq._id,
+                    quizTitle: eq.quiz?.title,
+                    score: eq.score,
+                    passed: eq.passed,
+                    date: eq.createdAt,
+                    totalQuestions: eq.totalQuestions,
+                    correctAnswers: eq.correctAnswers,
+                    extraXPAwarded: eq.extraXPAwarded
+                })),
+                certificates: detailedProgress.filter(c => c.isCompleted).map(c => ({
+                    id: c.id,
+                    courseTitle: c.title,
+                    completionDate: new Date().toLocaleDateString(), // We don't have completion date yet, using current as placeholder or we could add it to model
+                    category: c.category,
+                    thumbnail: c.thumbnail
+                }))
             }
         });
     } catch (error) {

@@ -66,6 +66,7 @@ app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/leaderboard', require('./routes/leaderboardRoutes'));
 app.use('/api/chatbot', require('./routes/chatbotRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
 
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 

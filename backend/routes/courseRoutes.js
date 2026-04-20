@@ -10,6 +10,7 @@ const {
     getPopularCourses,
     enrollCourse,
     getInstructorStudents,
+    getStudentDetailsForInstructor,
     searchCourses
 } = require('../controllers/courseController');
 
@@ -19,6 +20,7 @@ router.get('/search', searchCourses);
 router.get('/popular', getPopularCourses);
 router.get('/my-courses', protect, getMyCourses);
 router.get('/instructor/students', protect, getInstructorStudents);
+router.get('/instructor/students/:studentId', protect, getStudentDetailsForInstructor);
 
 
 router.route('/')

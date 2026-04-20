@@ -38,6 +38,7 @@ import { ManageCourses } from '@/dashboards/instructor/ManageCourses';
 import { ManageLessons } from '@/dashboards/instructor/ManageLessons';
 import { ManageQuizzes } from '@/dashboards/instructor/ManageQuizzes';
 import { InstructorStudents } from '@/dashboards/instructor/InstructorStudents';
+import { StudentDetails } from '@/dashboards/instructor/StudentDetails';
 import { InstructorAnalytics } from '@/dashboards/instructor/InstructorAnalytics';
 import { InstructorProfile } from '@/dashboards/instructor/InstructorProfile';
 
@@ -50,6 +51,8 @@ import { PlatformAnalytics } from '@/dashboards/admin/PlatformAnalytics';
 import { SystemSettings } from '@/dashboards/admin/SystemSettings';
 import { AdminRequests } from '@/dashboards/admin/AdminRequests';
 import { AdminProfile } from '@/dashboards/admin/AdminProfile';
+import { AdminStudentDetails } from '@/dashboards/admin/AdminStudentDetails';
+import { Messages } from '@/pages/shared/Messages';
 
 export function AppRoutes() {
   return (
@@ -84,6 +87,7 @@ export function AppRoutes() {
       <Route path="/student/profile" element={<StudentProfile />} />
       <Route path="/student/knowledge/:id" element={<CourseLearning />} />
       <Route path="/student/wishlist" element={<WishlistPage />} />
+      <Route path="/student/messages" element={<Messages />} />
 
       {/* Instructor Dashboard Routes */}
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
@@ -91,12 +95,15 @@ export function AppRoutes() {
       <Route path="/instructor/lessons" element={<ManageLessons />} />
       <Route path="/instructor/quizzes" element={<ManageQuizzes />} />
       <Route path="/instructor/students" element={<InstructorStudents />} />
+      <Route path="/instructor/students/:id" element={<StudentDetails />} />
       <Route path="/instructor/analytics" element={<InstructorAnalytics />} />
       <Route path="/instructor/profile" element={<InstructorProfile />} />
+      <Route path="/instructor/messages" element={<Messages />} />
 
       {/* Admin Dashboard Routes */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/students" element={<ManageStudents />} />
+      <Route path="/admin/students/:id" element={<AdminStudentDetails />} />
       <Route path="/admin/instructors" element={<ManageInstructors />} />
       <Route path="/admin/courses" element={<AdminManageCourses />} />
       <Route path="/admin/requests" element={<AdminRequests />} />

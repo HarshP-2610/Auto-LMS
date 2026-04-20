@@ -4,6 +4,7 @@ import {
   Menu, X, Sun, Moon, GraduationCap, User, Bell,
   LogOut, LayoutDashboard, Clock, Search
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTheme } from '@/context/ThemeContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -57,25 +58,62 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
           })
           .catch(err => console.error(`Error fetching profile:`, err));
       }
-
-      if (token && activeRole === 'admin') {
-        fetch('http://localhost:5000/api/admin/notifications', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data)) {
-              setNotifications(data);
-            }
-          })
-          .catch(err => console.error('Error fetching admin notifications:', err));
-      }
     } catch (error) {
       console.error("Failed parsing user data", error);
     }
   }, [activeRole]);
+
+  // Handle Notifications
+  useEffect(() => {
+    const token = localStorage.getItem('userToken');
+    if (!token || !isAuthenticated) return;
+
+    let lastUnreadCount = 0;
+    let isFirstFetch = true;
+
+    const fetchAllNotifications = async () => {
+      try {
+        const url = activeRole === 'admin' 
+          ? 'http://localhost:5000/api/admin/notifications' 
+          : 'http://localhost:5000/api/notifications';
+
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.success || Array.isArray(data)) {
+          const fetchedNotifs = Array.isArray(data) ? data : data.data;
+          const unreadCount = data.unreadCount !== undefined ? data.unreadCount : fetchedNotifs.filter((n: any) => !n.read).length;
+          
+          setNotifications(fetchedNotifs);
+
+          // Show toast if unread count increased (and it's not the first fetch)
+          if (!isFirstFetch && unreadCount > lastUnreadCount) {
+            const newNotifs = fetchedNotifs.filter((n: any) => !n.read).slice(0, unreadCount - lastUnreadCount);
+            newNotifs.forEach((notif: any) => {
+              toast.info(notif.message, {
+                description: 'New update from classroom',
+                action: {
+                  label: 'View',
+                  onClick: () => window.location.href = notif.link || '#'
+                },
+              });
+            });
+          }
+          lastUnreadCount = unreadCount;
+          isFirstFetch = false;
+        }
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+      }
+    };
+
+    fetchAllNotifications();
+    const interval = setInterval(fetchAllNotifications, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, activeRole]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,6 +135,21 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
     { label: 'About Us', href: '/about' },
     { label: 'Contact', href: '/contact' },
   ];
+
+  const markAllAsRead = async () => {
+    const token = localStorage.getItem('userToken');
+    if (!token) return;
+
+    try {
+      await fetch('http://localhost:5000/api/notifications/read-all', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error('Failed to mark all as read', err);
+    }
+  };
 
   return (
     <header
@@ -176,40 +229,37 @@ export function Navbar({ isDashboard = false, userRole: propUserRole = 'student'
                   <DropdownMenuTrigger asChild>
                     <button className="relative p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 group">
                       <Bell className={`w-5 h-5 group-hover:rotate-12 transition-transform ${(!isScrolled && transparentTheme === 'dark') ? 'text-gray-300' : 'text-gray-600 dark:text-gray-400'}`} />
-                      {activeRole === 'admin' && notifications.length > 0 && (
+                      {notifications.some(n => !n.read) && (
                         <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-gray-900 rounded-full animate-pulse"></span>
                       )}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-80 mt-2 p-0 rounded-2xl overflow-hidden border-gray-200 dark:border-gray-800 shadow-2xl">
-                    <div className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 font-bold text-sm border-b border-gray-100 dark:border-gray-800">
-                      Notifications
+                    <div className="px-5 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center border-b border-gray-100 dark:border-gray-800">
+                      <span className="font-bold text-sm">Notifications</span>
+                      {notifications.some(n => !n.read) && (
+                        <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:underline">Mark all read</button>
+                      )}
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
-                      {activeRole === 'admin' ? (
-                        notifications.length > 0 ? (
-                          notifications.map((notif: any) => (
-                            <DropdownMenuItem key={notif.id} asChild>
-                              <Link to={notif.link} className="flex flex-col gap-1 px-5 py-4 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                  {notif.message}
-                                </p>
-                                <p className="text-[10px] text-gray-500 flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {new Date(notif.time).toLocaleString()}
-                                </p>
-                              </Link>
-                            </DropdownMenuItem>
-                          ))
-                        ) : (
-                          <div className="p-8 text-center">
-                            <Bell className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
-                            <p className="text-sm text-gray-500">No new notifications</p>
-                          </div>
-                        )
+                      {notifications.length > 0 ? (
+                        notifications.map((notif: any) => (
+                          <DropdownMenuItem key={notif._id || notif.id} asChild>
+                            <Link to={notif.link || '#'} className={`flex flex-col gap-1 px-5 py-4 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors ${!notif.read ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}>
+                              <p className={`text-sm ${!notif.read ? 'font-bold' : 'font-medium'} text-gray-900 dark:text-gray-100`}>
+                                {notif.message}
+                              </p>
+                              <p className="text-[10px] text-gray-500 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {new Date(notif.createdAt || notif.time).toLocaleString()}
+                              </p>
+                            </Link>
+                          </DropdownMenuItem>
+                        ))
                       ) : (
-                        <div className="p-8 text-center text-sm text-gray-500">
-                          No notifications yet
+                        <div className="p-8 text-center">
+                          <Bell className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
+                          <p className="text-sm text-gray-500">No new notifications</p>
                         </div>
                       )}
                     </div>

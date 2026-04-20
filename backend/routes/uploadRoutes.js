@@ -71,4 +71,32 @@ router.post('/video', protect, uploadVideo.single('video'), (req, res) => {
     });
 });
 
+// Message Attachment Route
+const uploadAttachment = multer({
+    storage,
+    fileFilter: function (req, file, cb) {
+        // Allow images, pdfs, docs, zips
+        const filetypes = /jpg|jpeg|png|pdf|doc|docx|zip|txt/;
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = filetypes.test(file.mimetype);
+        if (extname || mimetype) {
+            return cb(null, true);
+        } else {
+            cb('File type not supported!');
+        }
+    },
+});
+
+router.post('/message-attachment', protect, uploadAttachment.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send({ message: 'No file uploaded' });
+    }
+    res.send({
+        message: 'File uploaded',
+        filePath: `/uploads/${req.file.filename}`,
+        fileName: req.file.originalname,
+        fileType: req.file.mimetype
+    });
+});
+
 module.exports = router;

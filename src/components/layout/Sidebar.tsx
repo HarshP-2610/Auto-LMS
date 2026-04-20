@@ -17,7 +17,8 @@ import {
   Zap,
   GraduationCap,
   ClipboardList,
-  Heart
+  Heart,
+  MessageSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,6 +42,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
     { label: 'Wishlist', href: '/student/wishlist', icon: Heart },
     { label: 'Quizzes', href: '/student/quizzes', icon: FileText },
     { label: 'Certificates', href: '/student/certificates', icon: Award },
+    { label: 'Messages', href: '/student/messages', icon: MessageSquare },
     { label: 'My Profile', href: '/student/profile', icon: User },
   ];
 
@@ -50,6 +52,7 @@ export function Sidebar({ userRole, isCollapsed, setIsCollapsed }: SidebarProps)
     { label: 'Curriculum', href: '/instructor/lessons', icon: PlayCircle },
     { label: 'Quizzes', href: '/instructor/quizzes', icon: FileText },
     { label: 'Students', href: '/instructor/students', icon: GraduationCap },
+    { label: 'Messages', href: '/instructor/messages', icon: MessageSquare },
     { label: 'Statistics', href: '/instructor/analytics', icon: TrendingUp },
     { label: 'Profile Settings', href: '/instructor/profile', icon: User },
   ];

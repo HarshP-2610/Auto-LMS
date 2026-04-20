@@ -293,35 +293,39 @@ const getFullCourseDetails = async (req, res) => {
     }
 };
 
-// @desc    Get detailed progress for a student across all enrolled courses
-// @route   GET /api/admin/users/:id/progress
+// @desc    Get comprehensive details for a student
+// @route   GET /api/admin/users/:id/full-details
 // @access  Private/Admin
-const getStudentProgress = async (req, res) => {
+const getStudentFullDetails = async (req, res) => {
     try {
-        const student = await User.findById(req.params.id);
+        const studentId = req.params.id;
+        const student = await User.findById(studentId);
+        
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
 
         const Progress = require('../models/Progress');
         const CompletedQuiz = require('../models/CompletedQuiz');
+        const Payment = require('../models/Payment');
+        const Message = require('../models/Message');
 
         // 1. Get all courses this student is enrolled in
         const enrolledCourses = await Course.find({ _id: { $in: student.enrolledCourses } })
-            .populate('instructor', 'name');
+            .populate('instructor', 'name email avatar');
 
         // 2. Fetch progress and quizzes for each course
         const progressData = await Promise.all(enrolledCourses.map(async (course) => {
-            const progress = await Progress.findOne({ user: student._id, course: course._id });
+            const progress = await Progress.findOne({ user: studentId, course: course._id });
             const completedQuizzes = await CompletedQuiz.find({
-                user: student._id,
+                user: studentId,
                 course: course._id
             }).populate('quiz', 'title isFinalAssessment');
 
             return {
                 courseId: course._id,
                 courseTitle: course.title,
-                instructorName: course.instructor?.name || 'Unknown',
+                instructor: course.instructor,
                 percentComplete: progress ? progress.percentComplete : 0,
                 isCompleted: progress ? progress.isCompleted : false,
                 completionDate: progress ? progress.completionDate : null,
@@ -336,15 +340,46 @@ const getStudentProgress = async (req, res) => {
             };
         }));
 
+        // 3. Fetch Payment History
+        const payments = await Payment.find({ student: studentId })
+            .populate('course', 'title')
+            .sort({ createdAt: -1 });
+
+        // 4. Fetch Instructors contacted via Messages
+        // Find all unique users this student has messaged or received messages from
+        const messages = await Message.find({
+            $or: [
+                { sender: studentId },
+                { receiver: studentId }
+            ]
+        });
+
+        const contactedUserIds = [...new Set(messages.map(m => 
+            m.sender.toString() === studentId.toString() ? m.receiver.toString() : m.sender.toString()
+        ))];
+
+        const contactedInstructors = await User.find({
+            _id: { $in: contactedUserIds },
+            role: 'instructor'
+        }).select('name email avatar');
+
         res.status(200).json({
-            student: {
+            personalDetails: {
+                _id: student._id,
                 name: student.name,
                 email: student.email,
-                avatar: student.avatar
+                phone: student.phone,
+                address: student.address,
+                avatar: student.avatar,
+                createdAt: student.createdAt,
+                isActive: student.isActive
             },
-            progress: progressData
+            learningProgress: progressData,
+            paymentHistory: payments,
+            contactedInstructors: contactedInstructors
         });
     } catch (error) {
+        console.error('Error fetching student full details:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -363,5 +398,5 @@ module.exports = {
     getAdminNotifications,
     deleteUser,
     getFullCourseDetails,
-    getStudentProgress
+    getStudentFullDetails
 };

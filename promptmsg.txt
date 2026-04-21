@@ -1,7 +1,40 @@
-I have a problem where students cannot see their instructors in the Messages page even after purchasing a course.
-
-Example Case:
-Het Siddhpuriya (Student) purchased the course "Complete Graphic Designing Masterclass," which was created and published by Archi Patel (Instructor). However, the instructor does not show up in the student's message contact list.
+I want to enhance the Course Cards within the "Detailed Learning" section of the Admin Student Details page (AdminStudentDetails.tsx) to provide administrators with deeper insights into a student's progress.
 
 Requirement:
-I want the Messages page to automatically show the list of instructors for all courses a student has purchased. A student should be able to see and message any instructor from whom they have an active course enrollment. This list should be filtered so that students only see instructors they are academically linked to through their purchased courses.
+1. Add a "View Detailed Progress" action button to each course card in the Admin Student Details page (src/dashboards/admin/AdminStudentDetails.tsx).
+2. When the admin clicks this button, it should display a breakdown of the student's completion status for the course.
+3. The breakdown must show:
+   - Total vs Completed Modules (Lessons).
+   - Total vs Completed Lessons (Topics).
+   - Total vs Completed Topics (Sub-units, if any, otherwise treat Topics as the primary unit).
+   - A count of how many items are "Completed" vs "Not Started".
+4. Implementation Details:
+   - Backend: Update the `getStudentFullDetails` controller in `backend/controllers/adminController.js` to calculate and return these granular counts by comparing the course curriculum (Lesson and Topic models) with the student's progress (Progress model).
+   - Frontend: Use a Modal or an expandable section with premium styling consistent with the existing dashboard. Incorporate icons from lucide-react (like CheckCircle2, Circle, Activity) and smooth animations using framer-motion.
+   - The UI should look high-impact and professional, fitting the "Academic Scholar" theme of the admin panel.
+
+Example Data to show:
+- Modules Completed: 4/10
+- Lessons Completed: 15/45
+- Topics Completed: 30/120
+- Status: 90 items not started yet.
+
+---
+
+Objective: Implement a Comprehensive Course Audit View for Instructors
+
+Requirement:
+1. Update the " View Instructor\ action button in the Manage Instructors page (src/dashboards/admin/ManageInstructors.tsx).
+2. When clicked, it should navigate to a new page (AdminInstructorCourses.tsx) that shows a detailed breakdown of all courses published by that specific instructor.
+3. The page must display:
+ - A list of all Published Courses.
+ - For each course, a drill-down into the Curriculum: 
+ - Modules (Lessons)
+ - Lessons (Topics)
+ - Sub-topics (if any)
+ - A section for Assessments and Quizzes associated with each course.
+ - A list of Students who have purchased/enrolled in each course.
+4. Implementation Details:
+ - Backend: Create or update an endpoint (e.g., getInstructorCourseDetails) to Aggregate course data, curriculum hierarchy, and student enrollment records.
+ - Frontend: Use a premium, structured layout (possibly using Tabs or nested Accordions) to organize the information. Incorporate Lucide icons (Library, Book, Users, ClipboardCheck) and maintain the high-impact \Academic Scholar\ aesthetic.
+ - Ensure smooth navigation and loading states.

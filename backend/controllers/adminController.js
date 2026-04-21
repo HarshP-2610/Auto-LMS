@@ -41,6 +41,10 @@ const approveInstructor = async (req, res) => {
             address: 'Not Provided',
             role: 'instructor',
             instructorBio: application.bio,
+            subject: application.subject,
+            educationalDetails: application.educationalDetails,
+            workExperience: application.workExperience,
+            areaOfExpertise: application.areaOfExpertise,
             isActive: true
         };
 
@@ -315,12 +319,34 @@ const getStudentFullDetails = async (req, res) => {
             .populate('instructor', 'name email avatar');
 
         // 2. Fetch progress and quizzes for each course
+        const Lesson = require('../models/Lesson');
+        const Topic = require('../models/Topic');
+
         const progressData = await Promise.all(enrolledCourses.map(async (course) => {
             const progress = await Progress.findOne({ user: studentId, course: course._id });
             const completedQuizzes = await CompletedQuiz.find({
                 user: studentId,
                 course: course._id
             }).populate('quiz', 'title isFinalAssessment');
+
+            // Calculate granular breakdown
+            const lessons = await Lesson.find({ course: course._id });
+            const topics = await Topic.find({ lesson: { $in: lessons.map(l => l._id) } });
+            
+            const completedTopicIds = progress ? progress.completedTopics.map(id => id.toString()) : [];
+            
+            const totalModules = lessons.length;
+            let completedModules = 0;
+            
+            lessons.forEach(lesson => {
+                const lessonTopics = topics.filter(t => t.lesson.toString() === lesson._id.toString());
+                if (lessonTopics.length > 0 && lessonTopics.every(t => completedTopicIds.includes(t._id.toString()))) {
+                    completedModules++;
+                }
+            });
+
+            const totalLessons = topics.length;
+            const completedLessons = topics.filter(t => completedTopicIds.includes(t._id.toString())).length;
 
             return {
                 courseId: course._id,
@@ -336,7 +362,15 @@ const getStudentFullDetails = async (req, res) => {
                     score: q.score,
                     passed: q.passed,
                     completedAt: q.completedAt
-                }))
+                })),
+                breakdown: {
+                    modules: { total: totalModules, completed: completedModules },
+                    lessons: { total: totalLessons, completed: completedLessons },
+                    topics: { total: totalLessons, completed: completedLessons }, // Topics and lessons are the same in this schema
+                    totalItems: totalModules + totalLessons,
+                    completedItems: completedModules + completedLessons,
+                    notStartedCount: (totalModules + totalLessons) - (completedModules + completedLessons)
+                }
             };
         }));
 
@@ -384,6 +418,173 @@ const getStudentFullDetails = async (req, res) => {
     }
 };
 
+// @desc    Get complete audit details for an instructor (courses, curriculum, students)
+// @route   GET /api/admin/users/:id/instructor-details
+// @access  Private/Admin
+const getInstructorFullDetails = async (req, res) => {
+    try {
+        const instructorId = req.params.id;
+        const instructor = await User.findById(instructorId).select('-password');
+        
+        if (!instructor || instructor.role !== 'instructor') {
+            return res.status(404).json({ message: 'Instructor not found' });
+        }
+
+        const Lesson = require('../models/Lesson');
+        const Topic = require('../models/Topic');
+        const Quiz = require('../models/Quiz');
+
+        // 1. Get all courses published by this instructor
+        const courses = await Course.find({ instructor: instructorId })
+            .populate('enrolledStudents', 'name email avatar createdAt');
+
+        // 2. Fetch curriculum and quizzes for each course
+        const detailedCourses = await Promise.all(courses.map(async (course) => {
+            // Get lessons
+            const lessons = await Lesson.find({ course: course._id }).sort('order');
+            
+            // Get topics for these lessons
+            const lessonIds = lessons.map(l => l._id);
+            const topics = await Topic.find({ lesson: { $in: lessonIds } }).sort('order');
+
+            // Build curriculum hierarchy
+            const curriculum = lessons.map(lesson => ({
+                ...lesson.toObject(),
+                topics: topics.filter(t => t.lesson.toString() === lesson._id.toString())
+            }));
+
+            // Get quizzes
+            const quizzes = await Quiz.find({ course: course._id });
+
+            return {
+                ...course.toObject(),
+                curriculum,
+                quizzes
+            };
+        }));
+
+        res.status(200).json({
+            instructor,
+            courses: detailedCourses
+        });
+    } catch (error) {
+        console.error('Error fetching instructor audit details:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get platform analytics
+// @route   GET /api/admin/analytics
+// @access  Private/Admin
+const getPlatformAnalytics = async (req, res) => {
+    try {
+        const Payment = require('../models/Payment');
+        const Review = require('../models/Review');
+        
+        // 1. Total Stats
+        const totalUsers = await User.countDocuments({ role: { $in: ['student', 'instructor'] } });
+        const totalStudents = await User.countDocuments({ role: 'student' });
+        const totalInstructors = await User.countDocuments({ role: 'instructor' });
+        const totalCourses = await Course.countDocuments({ status: 'published' });
+        
+        const payments = await Payment.find({ status: 'completed' });
+        const totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);
+
+        // 2. Revenue Overview (last 6 months)
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const today = new Date();
+        const monthlyRevenue = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const monthIndex = d.getMonth();
+            const year = d.getFullYear();
+            
+            const nextD = new Date(year, monthIndex + 1, 1);
+            
+            const monthPayments = await Payment.find({
+                status: 'completed',
+                createdAt: { $gte: d, $lt: nextD }
+            });
+            
+            monthlyRevenue.push({
+                month: monthNames[monthIndex],
+                revenue: monthPayments.reduce((acc, curr) => acc + curr.amount, 0)
+            });
+        }
+
+        // 3. User Growth (last 6 months)
+        const userGrowth = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const monthIndex = d.getMonth();
+            const year = d.getFullYear();
+            
+            const nextD = new Date(year, monthIndex + 1, 1);
+            
+            const studentCount = await User.countDocuments({
+                role: 'student',
+                createdAt: { $lt: nextD }
+            });
+            
+            const instructorCount = await User.countDocuments({
+                role: 'instructor',
+                createdAt: { $lt: nextD }
+            });
+            
+            userGrowth.push({
+                month: monthNames[monthIndex],
+                students: studentCount,
+                instructors: instructorCount
+            });
+        }
+
+        // 4. Course Distribution by Category
+        const categories = await Course.aggregate([
+            { $group: { _id: "$category", value: { $sum: 1 } } },
+            { $project: { name: "$_id", value: 1, _id: 0 } }
+        ]);
+
+        // 5. Top Performing Courses (by enrollment)
+        const allCourses = await Course.find({ status: 'published' });
+        
+        const topCourses = allCourses
+            .sort((a, b) => (b.enrolledStudents?.length || 0) - (a.enrolledStudents?.length || 0))
+            .slice(0, 5);
+        
+        const formattedTopCourses = await Promise.all(topCourses.map(async (course) => {
+            const coursePayments = await Payment.find({ course: course._id, status: 'completed' });
+            const revenue = coursePayments.reduce((acc, curr) => acc + curr.amount, 0);
+            
+            const reviews = await Review.find({ course: course._id });
+            const avgRating = reviews.length > 0 
+                ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)
+                : 5.0;
+
+            return {
+                name: course.title,
+                enrollments: course.enrolledStudents.length,
+                revenue,
+                rating: avgRating
+            };
+        }));
+
+        res.status(200).json({
+            totalUsers,
+            totalStudents,
+            totalInstructors,
+            totalCourses,
+            totalRevenue,
+            monthlyRevenue,
+            userGrowth,
+            categories,
+            topCourses: formattedTopCourses
+        });
+    } catch (error) {
+        console.error('Error in getPlatformAnalytics:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getPendingInstructors,
     approveInstructor,
@@ -398,5 +599,7 @@ module.exports = {
     getAdminNotifications,
     deleteUser,
     getFullCourseDetails,
-    getStudentFullDetails
+    getStudentFullDetails,
+    getInstructorFullDetails,
+    getPlatformAnalytics
 };

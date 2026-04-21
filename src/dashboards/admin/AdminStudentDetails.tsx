@@ -16,7 +16,13 @@ import {
   Clock,
   TrendingUp,
   Download,
-  AlertCircle
+  AlertCircle,
+  Activity,
+  Circle,
+  Layers,
+  Layout,
+  MonitorPlay,
+  X
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -53,6 +59,14 @@ interface StudentDetailsData {
       passed: boolean;
       completedAt: string;
     }>;
+    breakdown: {
+      modules: { total: number; completed: number };
+      lessons: { total: number; completed: number };
+      topics: { total: number; completed: number };
+      totalItems: number;
+      completedItems: number;
+      notStartedCount: number;
+    };
   }>;
   paymentHistory: Array<{
     _id: string;
@@ -77,6 +91,7 @@ export function AdminStudentDetails() {
   const [data, setData] = useState<StudentDetailsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'payments' | 'instructors'>('overview');
+  const [selectedCourseBreakdown, setSelectedCourseBreakdown] = useState<StudentDetailsData['learningProgress'][0] | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -163,10 +178,13 @@ export function AdminStudentDetails() {
               <div className="relative w-32 h-32 lg:w-48 lg:h-48 rounded-[2rem] overflow-hidden border-4 border-white dark:border-gray-800 shadow-xl">
                 <img 
                   src={personalDetails.avatar === 'no-photo.jpg' 
-                    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(personalDetails.name)}&background=random&size=200` 
-                    : (personalDetails.avatar.startsWith('http') ? personalDetails.avatar : `/uploads/${personalDetails.avatar}`)}
+                    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(personalDetails.name)}&background=3b82f6&color=fff&size=200` 
+                    : (personalDetails.avatar.startsWith('http') ? personalDetails.avatar : `http://localhost:5000/uploads/${personalDetails.avatar}`)}
                   className="w-full h-full object-cover transform scale-100 group-hover:scale-110 transition-transform duration-700" 
                   alt={personalDetails.name} 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(personalDetails.name)}&background=3b82f6&color=fff`;
+                  }}
                 />
               </div>
             </div>
@@ -315,10 +333,13 @@ export function AdminStudentDetails() {
                            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
                               <img 
                                 src={course.instructor.avatar === 'no-photo.jpg' 
-                                  ? `https://ui-avatars.com/api/?name=${encodeURIComponent(course.instructor.name)}&background=random` 
-                                  : (course.instructor.avatar.startsWith('http') ? course.instructor.avatar : `/uploads/${course.instructor.avatar}`)}
+                                  ? `https://ui-avatars.com/api/?name=${encodeURIComponent(course.instructor.name)}&background=8b5cf6&color=fff` 
+                                  : (course.instructor.avatar.startsWith('http') ? course.instructor.avatar : `http://localhost:5000/uploads/${course.instructor.avatar}`)}
                                 className="w-12 h-12 rounded-xl object-cover" 
                                 alt={course.instructor.name} 
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(course.instructor.name)}&background=8b5cf6&color=fff`;
+                                }}
                               />
                               <div>
                                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Faculty Advisor</p>
@@ -335,6 +356,15 @@ export function AdminStudentDetails() {
                                  <div className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-lg shadow-blue-500/40" style={{ width: `${course.percentComplete}%` }} />
                               </div>
                            </div>
+
+                           <Button 
+                             variant="outline" 
+                             className="w-full h-12 rounded-2xl border-blue-100 dark:border-blue-900/40 text-blue-600 font-black uppercase tracking-widest hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all gap-2"
+                             onClick={() => setSelectedCourseBreakdown(course)}
+                           >
+                             <Activity className="w-4 h-4" />
+                             View Detailed Progress
+                           </Button>
 
                            {course.isCompleted && (
                              <Button className="w-full h-14 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-black uppercase tracking-widest shadow-xl shadow-green-500/30 gap-3">
@@ -460,10 +490,13 @@ export function AdminStudentDetails() {
                             <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl blur opacity-10 group-hover/avatar:opacity-30 transition duration-500"></div>
                             <img 
                               src={instructor.avatar === 'no-photo.jpg' 
-                                ? `https://ui-avatars.com/api/?name=${encodeURIComponent(instructor.name)}&background=random` 
-                                : (instructor.avatar.startsWith('http') ? instructor.avatar : `/uploads/${instructor.avatar}`)}
+                                ? `https://ui-avatars.com/api/?name=${encodeURIComponent(instructor.name)}&background=8b5cf6&color=fff` 
+                                : (instructor.avatar.startsWith('http') ? instructor.avatar : `http://localhost:5000/uploads/${instructor.avatar}`)}
                               className="relative w-24 h-24 rounded-[1.5rem] object-cover ring-2 ring-white dark:ring-gray-800 shadow-lg" 
                               alt={instructor.name} 
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(instructor.name)}&background=8b5cf6&color=fff`;
+                              }}
                             />
                           </div>
                           <div>
@@ -499,6 +532,15 @@ export function AdminStudentDetails() {
             )}
           </motion.div>
         </AnimatePresence>
+
+        <AnimatePresence>
+          {selectedCourseBreakdown && (
+            <BreakdownModal 
+              course={selectedCourseBreakdown} 
+              onClose={() => setSelectedCourseBreakdown(null)} 
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       <style>{`
@@ -517,5 +559,135 @@ export function AdminStudentDetails() {
         }
       `}</style>
     </DashboardLayout>
+  );
+}
+
+const BreakdownModal = ({ course, onClose }: { course: any, onClose: () => void }) => {
+  if (!course) return null;
+  
+  const { breakdown } = course;
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-800"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-8 lg:p-10 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-blue-600 rounded-3xl shadow-xl shadow-blue-500/30">
+              <Activity className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Detailed Progress Analysis</p>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white line-clamp-1">{course.courseTitle}</h2>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-white dark:hover:bg-gray-800 rounded-2xl transition-colors group">
+            <X className="w-6 h-6 text-gray-400 group-hover:text-red-500" />
+          </button>
+        </div>
+
+        {/* Breakdown Content */}
+        <div className="p-8 lg:p-10 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ProgressMetric 
+              label="Modules" 
+              completed={breakdown.modules.completed} 
+              total={breakdown.modules.total} 
+              icon={Layers} 
+              color="blue"
+            />
+            <ProgressMetric 
+              label="Lessons" 
+              completed={breakdown.lessons.completed} 
+              total={breakdown.lessons.total} 
+              icon={Layout} 
+              color="indigo"
+            />
+            <ProgressMetric 
+              label="Topics" 
+              completed={breakdown.topics.completed} 
+              total={breakdown.topics.total} 
+              icon={MonitorPlay} 
+              color="emerald"
+            />
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-[2.5rem] p-8 border border-gray-100 dark:border-gray-800">
+             <div className="flex items-center justify-between mb-6">
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-400">Completion Velocity</h3>
+                <Badge className="bg-blue-600 font-black px-4 py-1.5 rounded-xl uppercase tracking-tighter shadow-lg shadow-blue-500/30">
+                   {course.percentComplete}% Overall
+                </Badge>
+             </div>
+             
+             <div className="space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                   <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
+                         <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                         <p className="text-base font-black text-gray-900 dark:text-white">{breakdown.completedItems} Units</p>
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Successfully Mastered</p>
+                      </div>
+                   </div>
+                   <div className="flex items-center gap-3 text-right">
+                      <div>
+                         <p className="text-base font-black text-gray-900 dark:text-white">{breakdown.notStartedCount} Units</p>
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-red-500">Awaiting Initiation</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                         <Circle className="w-5 h-5 text-red-500" />
+                      </div>
+                   </div>
+                </div>
+                
+                <div className="relative h-6 bg-gray-200 dark:bg-gray-700 rounded-2xl p-1 overflow-hidden shadow-inner flex">
+                   <div 
+                      className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl shadow-lg shadow-green-500/40 relative z-10 transition-all duration-1000"
+                      style={{ width: `${(breakdown.completedItems / (breakdown.totalItems || 1)) * 100}%` }}
+                   />
+                   <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black uppercase tracking-widest text-white mix-blend-difference">
+                      Status: {breakdown.notStartedCount === 0 ? 'Full Mastery Achieved' : `${breakdown.notStartedCount} items not started yet`}
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const ProgressMetric = ({ label, completed, total, icon: Icon, color }: any) => {
+  const colorMap: any = {
+    blue: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
+    indigo: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20',
+    emerald: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20'
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-950 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm group hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${colorMap[color]}`}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{label}</p>
+      <div className="flex items-baseline gap-1">
+        <span className="text-2xl font-black text-gray-900 dark:text-white">{completed}</span>
+        <span className="text-sm font-bold text-gray-400">/ {total}</span>
+      </div>
+    </div>
   );
 }

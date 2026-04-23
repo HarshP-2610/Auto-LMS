@@ -339,11 +339,16 @@ export function ManageCourses() {
                                             Academic Lead
                                         </th>
                                         <th className="px-10 py-10 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
+<<<<<<< HEAD
                                             Price Value
                                         </th>
                                         <th className="px-10 py-10 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
                                             Market Status
                                         </th>
+=======
+                                            Market Status
+                                        </th>
+>>>>>>> 68f605626bb17b223ee523a2aae9e25ae197528f
                                         <th className="px-10 py-10 text-right text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
                                             Ops Directives
                                         </th>
@@ -361,6 +366,7 @@ export function ManageCourses() {
                                             >
                                                 <td className="px-10 py-8">
                                                     <div className="flex items-center gap-6">
+<<<<<<< HEAD
                                                         <div className="relative shrink-0">
                                                             <div className="absolute -inset-3 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-20 transition duration-700"></div>
                                                             <div className="relative w-36 h-24 rounded-[1.5rem] overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-2 border-white dark:border-gray-800 transition-all duration-500 group-hover:shadow-blue-500/20 group-hover:scale-[1.02]">
@@ -379,6 +385,18 @@ export function ManageCourses() {
                                                                 </div>
                                                             </div>
                                                             <div className="absolute -top-2 -right-2 bg-blue-600 text-white px-2 py-1 rounded-xl text-[9px] font-black shadow-lg shadow-blue-500/40 uppercase tracking-tighter border-2 border-white dark:border-gray-900 z-20">
+=======
+                                                        <div className="relative">
+                                                            <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[1.8rem] blur opacity-0 group-hover:opacity-15 transition duration-500"></div>
+                                                            <img
+                                                                src={course.thumbnail === 'no-image.jpg'
+                                                                    ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
+                                                                    : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)}
+                                                                alt={course.title}
+                                                                className="relative w-24 h-16 object-cover rounded-[1.5rem] shadow-2xl transition-transform duration-500 group-hover:scale-105"
+                                                            />
+                                                            <div className="absolute top-1 right-1 bg-white/90 backdrop-blur px-1.5 py-0.5 rounded-lg text-[8px] font-black shadow-sm uppercase tracking-tighter">
+>>>>>>> 68f605626bb17b223ee523a2aae9e25ae197528f
                                                                 ${course.price}
                                                             </div>
                                                         </div>
@@ -409,6 +427,7 @@ export function ManageCourses() {
                                                     </div>
                                                 </td>
                                                 <td className="px-10 py-8">
+<<<<<<< HEAD
                                                     <div className="flex flex-col">
                                                         <span className="text-lg font-black text-emerald-600 dark:text-emerald-500 leading-none">
                                                             ${course.price?.toFixed(2)}
@@ -433,6 +452,22 @@ export function ManageCourses() {
                                                         </div>
                                                     </div>
                                                 </td>
+=======
+                                                    <div className="space-y-3">
+                                                        {getStatusBadge(course.status)}
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-tighter">
+                                                                <Users className="w-3.5 h-3.5 text-blue-500" />
+                                                                {course.enrolledStudents?.length || 0} SEATS
+                                                            </div>
+                                                            <div className="flex items-center gap-1 text-[10px] font-black text-gray-500 uppercase tracking-tighter">
+                                                                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                                                {course.rating || '5.0'} INDEX
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+>>>>>>> 68f605626bb17b223ee523a2aae9e25ae197528f
                                                 <td className="px-10 py-8 text-right">
                                                     <div className="flex items-center justify-end gap-3 lg:opacity-40 lg:group-hover:opacity-100 transition-all duration-300">
                                                         <Button 

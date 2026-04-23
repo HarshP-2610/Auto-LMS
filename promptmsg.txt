@@ -38,6 +38,7 @@ Requirement:
  - Backend: Create or update an endpoint (e.g., getInstructorCourseDetails) to Aggregate course data, curriculum hierarchy, and student enrollment records.
  - Frontend: Use a premium, structured layout (possibly using Tabs or nested Accordions) to organize the information. Incorporate Lucide icons (Library, Book, Users, ClipboardCheck) and maintain the high-impact \Academic Scholar\ aesthetic.
  - Ensure smooth navigation and loading states.
+<<<<<<< HEAD
 
 ---
 
@@ -72,3 +73,5 @@ Requirement:
    - REJECT: Synchronizes a "Denied" status, terminates the secure tunnel, and logs a security alert on the backend.
 5. Aesthetic: The remote interface must maintain the "Sovereign Security" design language, featuring glassmorphism, cinematic Framer Motion animations (breathing/shaking glows), and high-fidelity typography.
 6. Deployment Note: To test on local hardware (actual mobile devices), ensure the QR encodes the host machine's local IP address instead of "localhost".
+=======
+>>>>>>> 68f605626bb17b223ee523a2aae9e25ae197528f

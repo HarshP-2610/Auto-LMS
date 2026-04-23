@@ -340,15 +340,23 @@ export function ManageInstructors() {
                                                             <div className="absolute -inset-1.5 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-[2rem] blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
                                                             <img 
                                                                 src={user.avatar && user.avatar !== 'no-photo.jpg' 
+<<<<<<< HEAD
                                                                     ? (user.avatar.startsWith('http') ? user.avatar : `http://localhost:5000/uploads/${user.avatar}`) 
+=======
+                                                                    ? `http://localhost:5000/uploads/${user.avatar}` 
+>>>>>>> 68f605626bb17b223ee523a2aae9e25ae197528f
                                                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=8b5cf6&color=fff&size=256`} 
                                                                 alt={user.name}
                                                                 className="relative w-20 h-20 rounded-[1.8rem] object-cover ring-4 ring-white dark:ring-gray-800 shadow-2xl transition-all duration-500 group-hover:scale-105"
                                                                 onError={(e) => {
+<<<<<<< HEAD
                                                                     const target = e.target as HTMLImageElement;
                                                                     if (!target.src.includes('ui-avatars.com')) {
                                                                         target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=8b5cf6&color=fff&size=256`;
                                                                     }
+=======
+                                                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=8b5cf6&color=fff`;
+>>>>>>> 68f605626bb17b223ee523a2aae9e25ae197528f
                                                                 }}
                                                             />
                                                         </div>

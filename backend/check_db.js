@@ -1,10 +1,11 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const Course = require('./models/Course');
 const User = require('./models/User');
 
 const checkDB = async () => {
     try {
-        await mongoose.connect('mongodb://127.0.0.1:27017/autolms');
+        await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connected to MongoDB');
 
         const courses = await Course.find({});

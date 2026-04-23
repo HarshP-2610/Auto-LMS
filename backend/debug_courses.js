@@ -8,7 +8,7 @@ dotenv.config();
 
 const debug = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/autolms');
+        await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connected to DB');
 
         const users = await User.find({ role: 'student' });

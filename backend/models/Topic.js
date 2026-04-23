@@ -33,4 +33,6 @@ const topicSchema = new mongoose.Schema({
     },
 });
 
+topicSchema.index({ lesson: 1 });
+
 module.exports = mongoose.model('Topic', topicSchema);

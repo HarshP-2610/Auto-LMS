@@ -39,4 +39,7 @@ const paymentSchema = new mongoose.Schema({
     timestamps: true
 });
 
+paymentSchema.index({ student: 1 });
+paymentSchema.index({ course: 1 });
+
 module.exports = mongoose.model('Payment', paymentSchema);

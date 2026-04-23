@@ -16,7 +16,15 @@ import {
     Phone,
     Briefcase,
     GraduationCap,
-    FileText
+    FileText,
+    Library,
+    Layers,
+    Video,
+    FileQuestion,
+    DollarSign,
+    Zap,
+    TrendingUp,
+    CheckCircle2
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -40,6 +48,8 @@ export function AdminRequests() {
     // Course modal states
     const [selectedCourse, setSelectedCourse] = useState<any | null>(null);
     const [viewDialogOpen, setViewDialogOpen] = useState(false);
+    const [courseDetails, setCourseDetails] = useState<any>(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
     const [actionDialogOpen, setActionDialogOpen] = useState(false);
     const [action, setAction] = useState<'approve' | 'reject' | null>(null);
 
@@ -81,6 +91,31 @@ export function AdminRequests() {
     useEffect(() => {
         fetchAllData();
     }, []);
+
+    const fetchFullCourseDetails = async (courseId: string) => {
+        setDetailsLoading(true);
+        setViewDialogOpen(true);
+        try {
+            const token = localStorage.getItem('userToken');
+            const response = await fetch(`http://localhost:5000/api/admin/courses/${courseId}/full-details`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setCourseDetails(data);
+            } else {
+                toast.error(data.message || 'Failed to fetch course details');
+                setViewDialogOpen(false);
+            }
+        } catch (error) {
+            toast.error('An error occurred');
+            setViewDialogOpen(false);
+        } finally {
+            setDetailsLoading(false);
+        }
+    };
 
     const pendingCourses = courses.filter(c => c.status === 'pending');
 
@@ -230,7 +265,7 @@ export function AdminRequests() {
                                         </div>
 
                                         <div className="flex items-center gap-3 w-full lg:w-auto mt-4 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-50">
-                                            <Button variant="outline" className="flex-1 lg:flex-none h-12 rounded-2xl px-6 font-bold hover:bg-gray-50" onClick={() => { setSelectedCourse(course); setViewDialogOpen(true); }}>
+                                            <Button variant="outline" className="flex-1 lg:flex-none h-12 rounded-2xl px-6 font-bold hover:bg-gray-50" onClick={() => fetchFullCourseDetails(course._id)}>
                                                 <Eye className="w-4 h-4 mr-2" /> Inspect
                                             </Button>
                                             <Button className="flex-1 lg:flex-none h-12 rounded-2xl px-8 bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/25 font-black" onClick={() => handleCourseAction(course, 'approve')}>
@@ -306,60 +341,156 @@ export function AdminRequests() {
 
                 {/* Existing Course Modal Integration */}
                 <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-                    <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl">
-                        <div className="h-48 bg-gray-900 relative">
-                            {selectedCourse?.thumbnail && (
-                                <img src={selectedCourse.thumbnail} className="w-full h-full object-cover opacity-60" alt="" />
-                            )}
-                            <div className="absolute inset-x-8 -bottom-10 flex items-center gap-6">
-                                <div className="w-24 h-24 rounded-[2rem] bg-white dark:bg-gray-950 p-2 shadow-2xl">
-                                    <div className="w-full h-full rounded-[1.5rem] bg-blue-100 flex items-center justify-center">
-                                        <BookOpen className="w-8 h-8 text-blue-600" />
+                    <DialogContent className="sm:max-w-[850px] w-[95vw] max-h-[85vh] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden flex flex-col bg-white dark:bg-gray-950">
+                        {detailsLoading ? (
+                            <div className="flex flex-col items-center justify-center py-32">
+                                <div className="relative w-20 h-20 mb-6">
+                                    <div className="absolute inset-0 rounded-full border-4 border-blue-100 border-t-blue-600 animate-spin"></div>
+                                    <div className="absolute inset-4 rounded-full border-4 border-blue-50 border-b-blue-400 animate-spin-reverse"></div>
+                                </div>
+                                <p className="text-gray-400 font-black uppercase tracking-[0.4em] text-[10px]">Accessing Curriculum Core...</p>
+                            </div>
+                        ) : courseDetails ? (
+                            <>
+                                <div className="relative shrink-0 p-8 pb-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-gray-900 dark:to-gray-950 border-b border-gray-100 dark:border-gray-800 overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full -mr-20 -mt-20"></div>
+                                    <div className="flex flex-col md:flex-row gap-6 items-start md:items-center relative z-10">
+                                        <div className="relative shrink-0">
+                                            <div className="absolute -inset-1 bg-blue-600/10 rounded-2xl blur group-hover:opacity-100 transition duration-500"></div>
+                                            <img
+                                                src={courseDetails.course.thumbnail === 'no-image.jpg'
+                                                    ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60'
+                                                    : (courseDetails.course.thumbnail?.startsWith('http') ? courseDetails.course.thumbnail : `http://localhost:5000/uploads/${courseDetails.course.thumbnail}`)}
+                                                alt={courseDetails.course.title}
+                                                className="relative w-40 h-24 object-cover rounded-xl shadow-xl border border-white/50"
+                                            />
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Badge className="bg-blue-600 font-black uppercase tracking-widest text-[8px] px-2 py-0.5 rounded-md">
+                                                    {courseDetails.course.category}
+                                                </Badge>
+                                                <Badge variant="outline" className="border-blue-200 text-blue-600 bg-white/50 backdrop-blur font-black uppercase tracking-widest text-[8px] px-2 py-0.5 rounded-md">
+                                                    {courseDetails.course.difficulty}
+                                                </Badge>
+                                            </div>
+                                            <DialogTitle className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white leading-tight tracking-tight">
+                                                {courseDetails.course.title}
+                                            </DialogTitle>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-black text-[9px] text-white">
+                                                    {courseDetails.course.instructor?.name?.charAt(0)}
+                                                </div>
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                                    Academic Lead: <span className="text-gray-900 dark:text-gray-300">{courseDetails.course.instructor?.name}</span>
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="pb-1">
-                                    <Badge className="bg-blue-600 text-white border-none font-bold uppercase text-[9px] mb-2 px-3">Curriculum Submission</Badge>
-                                    <h2 className="text-2xl font-black text-white drop-shadow-lg">{selectedCourse?.title}</h2>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="px-10 pt-16 pb-10 space-y-8">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Instructor</p>
-                                    <p className="font-bold text-gray-900">{selectedCourse?.instructor?.name}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</p>
-                                    <p className="font-bold text-gray-900">{selectedCourse?.category}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Difficulty</p>
-                                    <p className="font-bold text-blue-600">{selectedCourse?.difficulty}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pricing</p>
-                                    <p className="font-bold text-emerald-600">${selectedCourse?.price}</p>
-                                </div>
-                            </div>
+                                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar space-y-10 min-h-0">
+                                    {/* Academic Summary */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <FileText className="w-3.5 h-3.5" />
+                                            Executive Curriculum Summary
+                                        </h4>
+                                        <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 italic font-medium">
+                                            "{courseDetails.course.description}"
+                                        </div>
+                                    </div>
 
-                            <div className="space-y-3">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Executive Summary</p>
-                                <div className="p-6 rounded-[2rem] bg-gray-50 border border-gray-100 text-sm text-gray-600 leading-relaxed italic">
-                                    {selectedCourse?.description}
-                                </div>
-                            </div>
+                                    {/* Structural Curriculum */}
+                                    <div className="space-y-5">
+                                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <Layers className="w-3.5 h-3.5" />
+                                            Structural Blueprint ({courseDetails.curriculum?.length || 0} Directives)
+                                        </h4>
+                                        <div className="flex flex-col gap-4">
+                                            {courseDetails.curriculum?.map((lesson: any, lIdx: number) => (
+                                                <div key={lesson._id} className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm hover:border-blue-200 transition-all">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-lg shadow-blue-500/20">
+                                                                {lIdx + 1}
+                                                            </div>
+                                                            <div>
+                                                                <h5 className="text-base font-black text-gray-900 dark:text-white tracking-tight leading-none">
+                                                                    {lesson.title}
+                                                                </h5>
+                                                                <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest mt-1">{lesson.topics?.length || 0} Knowledge Nodes</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                            <div className="flex gap-4 pt-4">
-                                <Button variant="outline" className="flex-1 h-14 rounded-2xl border-2 border-gray-100 font-bold" onClick={() => setViewDialogOpen(false)}>
-                                    Discard Review
-                                </Button>
-                                <Button className="flex-1 h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-500/30 font-black text-lg" onClick={() => { setViewDialogOpen(false); handleCourseAction(selectedCourse, 'approve'); }}>
-                                    Approve Launch <ArrowRight className="w-5 h-5 ml-2" />
-                                </Button>
-                            </div>
-                        </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        {lesson.topics?.map((topic: any) => (
+                                                            <div key={topic._id} className="flex items-center gap-3 bg-gray-50/50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100/50 dark:border-gray-700/50 group transition-all hover:bg-white dark:hover:bg-gray-800 hover:shadow-md">
+                                                                <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                                                                    <Video className="w-4 h-4 text-blue-500" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xs font-black text-gray-700 dark:text-gray-300 group-hover:text-blue-600 transition-colors truncate">
+                                                                        {topic.title}
+                                                                    </p>
+                                                                    <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest leading-none mt-0.5">
+                                                                        NODE: {topic.duration}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Examination Registry */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <FileQuestion className="w-3.5 h-3.5" />
+                                            Examination Registry
+                                        </h4>
+                                        {courseDetails.quizzes && courseDetails.quizzes.length > 0 ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {courseDetails.quizzes.map((quiz: any) => (
+                                                    <div key={quiz._id} className="flex items-center gap-4 bg-emerald-500/5 dark:bg-emerald-900/10 p-5 rounded-2xl border border-emerald-500/10 dark:border-emerald-800/30 group hover:border-emerald-500/30 transition-all">
+                                                        <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-md flex items-center justify-center shrink-0">
+                                                            <FileQuestion className="w-6 h-6 text-emerald-500" />
+                                                        </div>
+                                                        <div className="space-y-0.5">
+                                                            <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                                                {quiz.title}
+                                                                {quiz.isFinalAssessment && (
+                                                                    <Badge className="bg-emerald-500 text-[7px] h-3.5 px-1 font-black">MASTER</Badge>
+                                                                )}
+                                                            </p>
+                                                            <p className="text-[9px] text-emerald-600 font-black uppercase tracking-[0.1em] opacity-80">
+                                                                Threshold: {quiz.passingMarks}%
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="bg-gray-50 dark:bg-gray-800/50 p-8 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 text-center">
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">No Examination Protocols Active</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="shrink-0 p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-4">
+                                    <Button variant="outline" onClick={() => setViewDialogOpen(false)} className="flex-1 h-14 rounded-2xl border-2 border-gray-200 font-bold hover:bg-gray-100">
+                                        Back to Inbox
+                                    </Button>
+                                    <Button className="flex-1 h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-500/30 font-black text-lg text-white" onClick={() => { setViewDialogOpen(false); handleCourseAction(courseDetails.course, 'approve'); }}>
+                                        Approve Launch <ArrowRight className="w-5 h-5 ml-2" />
+                                    </Button>
+                                </div>
+                            </>
+                        ) : null}
                     </DialogContent>
                 </Dialog>
 

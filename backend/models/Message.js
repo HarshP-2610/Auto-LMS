@@ -40,4 +40,7 @@ const messageSchema = new mongoose.Schema({
     timestamps: true
 });
 
+messageSchema.index({ sender: 1 });
+messageSchema.index({ receiver: 1 });
+
 module.exports = mongoose.model('Message', messageSchema);

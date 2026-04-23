@@ -18,12 +18,12 @@ import { StatCard } from '@/components/common/StatCard';
 import { UserGrowthChart } from '@/components/charts/UserGrowthChart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { adminAnalytics } from '@/data/mockData';
 import { toast } from 'sonner';
 
 export function AdminDashboard() {
   const [pendingInstructors, setPendingInstructors] = useState<any[]>([]);
   const [pendingCourses, setPendingCourses] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -32,35 +32,28 @@ export function AdminDashboard() {
       const token = localStorage.getItem('userToken');
       if (!token) return;
 
-      // Fetch pending instructors
-      const pendingResponse = await fetch('http://localhost:5000/api/admin/pending-instructors', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (pendingResponse.ok) {
-        setPendingInstructors(await pendingResponse.json());
-      }
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
 
-      // Fetch pending courses
-      const coursesResponse = await fetch('http://localhost:5000/api/admin/pending-courses', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (coursesResponse.ok) {
-        setPendingCourses(await coursesResponse.json());
-      }
+      const baseUrl = 'http://localhost:5000/api';
 
-      // Fetch profile
-      const profileResponse = await fetch('http://localhost:5000/api/users/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (profileResponse.ok) {
-        const data = await profileResponse.json();
+      // Fetch pending instructors, pending courses, profile, and analytics in parallel
+      const [pendingRes, coursesRes, profileRes, analyticsRes] = await Promise.all([
+        fetch(`${baseUrl}/admin/pending-instructors`, { headers }),
+        fetch(`${baseUrl}/admin/pending-courses`, { headers }),
+        fetch(`${baseUrl}/users/profile`, { headers }),
+        fetch(`${baseUrl}/admin/analytics`, { headers })
+      ]);
+
+      if (pendingRes.ok) setPendingInstructors(await pendingRes.json());
+      if (coursesRes.ok) setPendingCourses(await coursesRes.json());
+      if (profileRes.ok) {
+        const data = await profileRes.json();
         setUserName(data.name || '');
+      }
+      if (analyticsRes.ok) {
+        setAnalytics(await analyticsRes.json());
       }
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -95,6 +88,12 @@ export function AdminDashboard() {
     }
   };
 
+  const formatRevenue = (val: number) => {
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(2)}M`;
+    if (val >= 1000) return `$${(val / 1000).toFixed(1)}K`;
+    return `$${val}`;
+  };
+
   return (
     <DashboardLayout userRole="admin">
       <div className="space-y-8">
@@ -112,7 +111,7 @@ export function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Users"
-            value={adminAnalytics.totalUsers.toLocaleString()}
+            value={analytics ? analytics.totalUsers.toLocaleString() : '...'}
             trend="up"
             trendValue="+5% this month"
             icon={Users}
@@ -120,7 +119,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Total Courses"
-            value={adminAnalytics.totalCourses}
+            value={analytics ? analytics.totalCourses : '...'}
             trend="up"
             trendValue="+12 new this week"
             icon={BookOpen}
@@ -128,7 +127,7 @@ export function AdminDashboard() {
           />
           <StatCard
             title="Total Revenue"
-            value={`$${(adminAnalytics.totalRevenue / 1000000).toFixed(2)}M`}
+            value={analytics ? formatRevenue(analytics.totalRevenue) : '...'}
             trend="up"
             trendValue="+8% this month"
             icon={DollarSign}
@@ -159,7 +158,7 @@ export function AdminDashboard() {
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
-              <UserGrowthChart data={adminAnalytics.userGrowth} />
+              {analytics && <UserGrowthChart data={analytics.userGrowth} />}
             </div>
 
             {/* Pending Approvals */}
@@ -289,21 +288,25 @@ export function AdminDashboard() {
                 Top Courses
               </h2>
               <div className="space-y-4">
-                {adminAnalytics.topCourses.map((course, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">
-                        {course.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {course.enrollments.toLocaleString()} enrollments
-                      </p>
+                {analytics ? (
+                  analytics.topCourses.map((course: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">
+                          {course.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {course.enrollments.toLocaleString()} enrollments
+                        </p>
+                      </div>
+                      <span className="text-green-600 font-medium text-sm">
+                        ${course.revenue.toLocaleString()}
+                      </span>
                     </div>
-                    <span className="text-green-600 font-medium text-sm">
-                      ${course.revenue.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">Loading top courses...</p>
+                )}
               </div>
             </div>
 

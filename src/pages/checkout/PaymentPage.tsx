@@ -9,13 +9,19 @@ import {
     Lock,
     Loader2,
     Wallet,
-    ChevronRight
+    ChevronRight,
+    CheckCircle2,
+    LockKeyhole,
+    Activity,
+    ShieldAlert
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 export function PaymentPage() {
     const { id } = useParams<{ id: string }>();
@@ -29,10 +35,10 @@ export function PaymentPage() {
     const navigate = useNavigate();
 
     const processingSteps = [
-        { label: 'Verifying payment details...', icon: '🔐' },
-        { label: 'Processing transaction...', icon: '💳' },
-        { label: 'Confirming enrollment...', icon: '📚' },
-        { label: 'Finalizing your access...', icon: '✅' }
+        { label: 'Initializing Secure Tunnel', icon: <LockKeyhole className="w-5 h-5" /> },
+        { label: 'Encrypting Financial Payload', icon: <Activity className="w-5 h-5" /> },
+        { label: 'Merchant Authorization', icon: <ShieldCheck className="w-5 h-5" /> },
+        { label: 'Establishing Academic Record', icon: <CheckCircle2 className="w-5 h-5" /> }
     ];
 
     useEffect(() => {
@@ -67,7 +73,6 @@ export function PaymentPage() {
         setProcessingStep(0);
         setProcessingError('');
 
-        // Wait for animation steps to play, then fire the API
         setTimeout(async () => {
             try {
                 const token = localStorage.getItem('userToken');
@@ -93,21 +98,10 @@ export function PaymentPage() {
                     })
                 });
 
-                console.log('Payment response status:', response.status);
-                const text = await response.text();
-                console.log('Payment response text:', text);
-
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    throw new Error('Server returned invalid response');
-                }
+                const data = await response.json();
 
                 if (response.ok) {
-                    // Set final step
                     setProcessingStep(processingSteps.length - 1);
-                    // Wait a moment for the final animation, then navigate
                     setTimeout(() => {
                         navigate('/checkout/success', {
                             state: {
@@ -118,379 +112,382 @@ export function PaymentPage() {
                         });
                     }, 1000);
                 } else {
-                    setProcessingError(data.message || 'Payment failed. Please try again.');
+                    setProcessingError(data.message || 'Transaction Declined. Verification Failed.');
                     setTimeout(() => {
                         setIsProcessing(false);
                         setProcessingError('');
-                    }, 3000);
+                    }, 3500);
                 }
             } catch (error) {
-                console.error('Payment error', error);
-                setProcessingError('Network error. Please try again.');
+                setProcessingError('Structural Network Breach. Please retry.');
                 setTimeout(() => {
                     setIsProcessing(false);
                     setProcessingError('');
-                }, 3000);
+                }, 3500);
             }
-        }, 2500);
+        }, 2000);
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
-                <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-                    <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center space-y-4">
+                <div className="relative w-20 h-20">
+                    <div className="absolute inset-0 border-4 border-blue-500/10 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <p className="text-slate-400 font-medium">Setting up secure gateway...</p>
+                <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">Accessing Secure Gateway...</p>
             </div>
         );
     }
 
-    if (!course) return <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">Course not found</div>;
+    if (!course) return <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center text-xs uppercase tracking-widest font-black">Entity Not Found</div>;
 
     return (
-        <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] text-slate-900 dark:text-slate-100 selection:bg-blue-500/30">
             <Navbar />
 
-            {/* ====== PROCESSING OVERLAY MODAL ====== */}
-            {isProcessing && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-                    {/* Backdrop */}
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" style={{ animation: 'fadeIn 0.3s ease-out' }}></div>
-
-                    {/* Modal */}
-                    <div
-                        className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-10 md:p-14 w-[90%] max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800"
-                        style={{ animation: 'modalSlideUp 0.4s ease-out' }}
+            {/* ====== CINEMATIC PROCESSING OVERLAY ====== */}
+            <AnimatePresence>
+                {isProcessing && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[9999] flex items-center justify-center"
                     >
-                        {/* Top Glow */}
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-blue-500/20 blur-[80px] rounded-full"></div>
+                        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-2xl"></div>
 
-                        {processingError ? (
-                            /* Error State */
-                            <div className="text-center space-y-6">
-                                <div className="w-20 h-20 mx-auto rounded-full bg-red-500/10 flex items-center justify-center">
-                                    <span className="text-4xl">❌</span>
+                        <motion.div
+                            initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="relative bg-white dark:bg-slate-900 rounded-[4rem] p-12 md:p-16 w-[90%] max-w-xl shadow-[0_0_100px_rgba(0,0,0,0.5)] border border-white/20 dark:border-white/5 overflow-hidden"
+                        >
+                            {/* Decorative Glow */}
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-500/20 blur-[100px] rounded-full"></div>
+
+                            {processingError ? (
+                                <div className="text-center space-y-8">
+                                    <div className="w-24 h-24 mx-auto rounded-[2.5rem] bg-rose-500/10 flex items-center justify-center border-2 border-rose-500/20">
+                                        <ShieldAlert className="w-12 h-12 text-rose-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-3xl font-black tracking-tighter text-rose-500 mb-3 uppercase">Security Breach</h3>
+                                        <p className="text-sm text-slate-500 font-medium italic">{processingError}</p>
+                                    </div>
+                                    <Button onClick={() => setIsProcessing(false)} className="w-full h-16 rounded-[1.5rem] bg-rose-600 hover:bg-rose-700 font-black uppercase text-xs tracking-widest">
+                                        Return to Interface
+                                    </Button>
                                 </div>
-                                <div>
-                                    <h3 className="text-xl font-black tracking-tight text-red-500 mb-2">Payment Failed</h3>
-                                    <p className="text-sm text-slate-500">{processingError}</p>
-                                </div>
-                            </div>
-                        ) : (
-                            /* Processing State */
-                            <div className="text-center space-y-8">
-                                {/* Animated Spinner */}
-                                <div className="relative w-24 h-24 mx-auto">
-                                    <div className="absolute inset-0 border-4 border-blue-500/10 rounded-full"></div>
-                                    <div className="absolute inset-0 border-4 border-transparent border-t-blue-500 border-r-blue-400 rounded-full animate-spin"></div>
-                                    <div className="absolute inset-2 border-4 border-transparent border-b-indigo-500 border-l-indigo-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-3xl" style={{ animation: 'pulse 1s ease-in-out infinite' }}>
-                                            {processingSteps[processingStep].icon}
-                                        </span>
+                            ) : (
+                                <div className="text-center space-y-12">
+                                    {/* Advanced Spinner UI */}
+                                    <div className="relative w-32 h-32 mx-auto">
+                                        <div className="absolute inset-0 border-4 border-blue-500/5 rounded-full"></div>
+                                        <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 border-r-blue-400 rounded-full animate-spin"></div>
+                                        <div className="absolute inset-3 border-4 border-transparent border-b-indigo-500 border-l-indigo-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="text-blue-600 animate-pulse">
+                                                {processingSteps[processingStep].icon}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <h3 className="text-2xl font-black tracking-tight uppercase">Executing Transaction</h3>
+                                        <div className="flex flex-col items-center gap-3">
+                                            {processingSteps.map((step, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className={`flex items-center gap-4 transition-all duration-700 ${idx <= processingStep ? 'opacity-100 scale-100' : 'opacity-20 scale-95'}`}
+                                                >
+                                                    <div className={`w-2 h-2 rounded-full ${idx < processingStep ? 'bg-emerald-500' : idx === processingStep ? 'bg-blue-600 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
+                                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${idx === processingStep ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                        {step.label}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Authenticated Amount</p>
+                                        <p className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">${course.price}</p>
                                     </div>
                                 </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                                {/* Title */}
-                                <div>
-                                    <h3 className="text-xl font-black tracking-tight mb-1">Processing Payment</h3>
-                                    <p className="text-sm text-slate-500 font-medium">Please do not close this window</p>
-                                </div>
+            <div className="pt-32 pb-24 relative overflow-hidden">
+                {/* Ambient Background */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    <div className="absolute top-[-10%] right-[-10%] w-[45%] h-[45%] bg-blue-600/10 blur-[120px] rounded-full"></div>
+                    <div className="absolute bottom-[-10%] left-[-10%] w-[45%] h-[45%] bg-indigo-600/10 blur-[120px] rounded-full"></div>
+                </div>
 
-                                {/* Step Indicators */}
-                                <div className="space-y-3 text-left max-w-xs mx-auto">
-                                    {processingSteps.map((step, idx) => (
-                                        <div
-                                            key={idx}
-                                            className={`flex items-center gap-3 transition-all duration-500 ${idx <= processingStep ? 'opacity-100' : 'opacity-30'
-                                                }`}
+                <div className="max-w-7xl mx-auto px-6 relative z-10">
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-10 mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                        >
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors group mb-4"
+                            >
+                                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                                Return to Order Review
+                            </button>
+                            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                                Secure <span className="text-blue-600">Checkout</span>
+                            </h1>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-center gap-4 bg-white/50 dark:bg-white/5 backdrop-blur-xl border border-white/20 dark:border-white/10 p-2 rounded-[2rem] shadow-xl"
+                        >
+                            <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
+                                <CheckCircle className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Review</span>
+                            </div>
+                            <div className="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
+                            <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/25">
+                                <CreditCard className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Payment</span>
+                            </div>
+                            <div className="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
+                            <div className="flex items-center gap-3 px-6 py-3 text-slate-400">
+                                <Award className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Success</span>
+                            </div>
+                        </motion.div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                        {/* Left Column: Form */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="lg:col-span-8 space-y-10"
+                        >
+                            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 md:p-14 border border-white/50 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>
+
+                                <div className="relative space-y-12">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-2xl font-black tracking-tight uppercase flex items-center gap-4">
+                                            <span className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                                <Wallet className="w-6 h-6" />
+                                            </span>
+                                            Authorization Protocol
+                                        </h2>
+                                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none px-4 py-1.5 rounded-xl font-black uppercase tracking-widest text-[9px]">
+                                            Secure Channel Active
+                                        </Badge>
+                                    </div>
+
+                                    {/* Payment Method Selector */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <button
+                                            onClick={() => setPaymentMethod('card')}
+                                            className={`group relative p-8 rounded-[2.5rem] border-2 text-left transition-all duration-500 ${paymentMethod === 'card'
+                                                ? 'border-blue-600 bg-blue-500/5 shadow-2xl shadow-blue-500/10'
+                                                : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30'}`}
                                         >
-                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${idx < processingStep
-                                                ? 'bg-emerald-500 text-white scale-100'
-                                                : idx === processingStep
-                                                    ? 'bg-blue-600 text-white scale-110'
-                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                                                }`}>
-                                                {idx < processingStep ? (
-                                                    <CheckCircle className="w-4 h-4" />
-                                                ) : idx === processingStep ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${paymentMethod === 'card' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-100 dark:border-slate-700'}`}>
+                                                    <CreditCard className="w-7 h-7" />
+                                                </div>
+                                                {paymentMethod === 'card' && (
+                                                    <motion.div layoutId="active" className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                                        <CheckCircle2 className="w-5 h-5" />
+                                                    </motion.div>
                                                 )}
                                             </div>
-                                            <span className={`text-sm font-bold ${idx < processingStep
-                                                ? 'text-emerald-600 dark:text-emerald-400 line-through'
-                                                : idx === processingStep
-                                                    ? 'text-blue-600 dark:text-blue-400'
-                                                    : 'text-slate-400'
-                                                }`}>
-                                                {step.label}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                                            <h4 className="font-black uppercase tracking-[0.2em] text-[10px] mb-2 text-slate-400">Option 01</h4>
+                                            <p className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Credit Ledger</p>
+                                        </button>
 
-                                {/* Amount being processed */}
-                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Amount</p>
-                                    <p className="text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tight">${course.price}</p>
-                                </div>
-
-                                {/* Security Badge */}
-                                <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    <Lock className="w-3 h-3" />
-                                    256-bit SSL Encrypted
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Inline styles for modal animations */}
-            <style>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes modalSlideUp {
-                    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
-                }
-                @keyframes pulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.15); }
-                }
-            `}</style>
-
-            <div className="pt-32 pb-20 relative overflow-hidden">
-                {/* Decorative Background Elements */}
-                <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-blue-600/5 blur-[120px] rounded-full translate-x-1/4 -translate-y-1/4"></div>
-                <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-purple-600/5 blur-[100px] rounded-full -translate-x-1/4 translate-y-1/4"></div>
-
-                <div className="max-w-6xl mx-auto px-4 relative z-10">
-                    {/* Progress Stepper */}
-                    <div className="flex items-center justify-center mb-12">
-                        <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white ring-4 ring-emerald-500/20">
-                                    <CheckCircle className="w-6 h-6" />
-                                </div>
-                                <span className="text-xs font-bold uppercase tracking-wider text-emerald-500">Review</span>
-                            </div>
-                            <div className="w-20 h-px bg-emerald-500/30"></div>
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white ring-4 ring-blue-600/20 scale-110">
-                                    <CreditCard className="w-6 h-6" />
-                                </div>
-                                <span className="text-xs font-bold uppercase tracking-wider text-blue-500">Payment</span>
-                            </div>
-                            <div className="w-20 h-px bg-slate-200 dark:bg-slate-800"></div>
-                            <div className="flex flex-col items-center gap-2">
-                                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-400">
-                                    <Award className="w-5 h-5" />
-                                </div>
-                                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Success</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                        {/* Left Column: Summary */}
-                        <div className="lg:col-span-4 space-y-6 lg:order-2">
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-xl">
-                                <h3 className="text-xl font-black mb-6 tracking-tight uppercase">Order Summary</h3>
-                                <div className="space-y-6">
-                                    <div className="flex gap-4">
-                                        <img
-                                            src={course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)}
-                                            className="w-20 h-20 rounded-2xl object-cover border border-slate-200 dark:border-slate-800"
-                                            alt=""
-                                        />
-                                        <div className="flex-1">
-                                            <h4 className="text-sm font-black line-clamp-2 uppercase tracking-tight">{course.title}</h4>
-                                            <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">{course.category}</p>
-                                        </div>
+                                        <button
+                                            onClick={() => setPaymentMethod('upi')}
+                                            className={`group relative p-8 rounded-[2.5rem] border-2 text-left transition-all duration-500 ${paymentMethod === 'upi'
+                                                ? 'border-blue-600 bg-blue-500/5 shadow-2xl shadow-blue-500/10'
+                                                : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30'}`}
+                                        >
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${paymentMethod === 'upi' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-100 dark:border-slate-700'}`}>
+                                                    <Activity className="w-7 h-7" />
+                                                </div>
+                                                {paymentMethod === 'upi' && (
+                                                    <motion.div layoutId="active" className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                                                        <CheckCircle2 className="w-5 h-5" />
+                                                    </motion.div>
+                                                )}
+                                            </div>
+                                            <h4 className="font-black uppercase tracking-[0.2em] text-[10px] mb-2 text-slate-400">Option 02</h4>
+                                            <p className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Instant UPI</p>
+                                        </button>
                                     </div>
 
-                                    <div className="pt-6 border-t border-slate-100 dark:border-slate-800/50 space-y-3">
-                                        <div className="flex justify-between text-sm font-medium">
-                                            <span className="text-slate-500 uppercase tracking-widest font-bold text-[10px]">Original Price</span>
-                                            <span className="text-slate-400 line-through">${course.originalPrice || (course.price * 1.5).toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-slate-500 uppercase tracking-widest font-bold text-[10px]">LMS Discount</span>
-                                            <span className="text-green-500 font-bold">-$85.00</span>
-                                        </div>
-                                        <div className="flex justify-between pt-4 border-t border-slate-100 dark:border-slate-800/50">
-                                            <span className="text-lg font-black uppercase tracking-tight">Total Amount</span>
-                                            <span className="text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tight">${course.price}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 space-y-2">
-                                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest flex items-center gap-2">
-                                            <Lock className="w-3 h-3" />
-                                            Secure Transaction
-                                        </p>
-                                        <p className="text-[11px] text-slate-500 leading-snug">Every purchase is protected by 256-bit encryption ensuring your data stays private and safe.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column: Payment Form */}
-                        <div className="lg:col-span-8 space-y-6 lg:order-1">
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 lg:p-12 shadow-xl relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
-
-                                <h2 className="text-3xl font-black mb-8 tracking-tight flex items-center gap-4">
-                                    <CreditCard className="w-8 h-8 text-blue-500" />
-                                    Select Payment Way
-                                </h2>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-                                    <button
-                                        onClick={() => setPaymentMethod('card')}
-                                        className={`p-6 rounded-[2rem] border-2 text-left transition-all ${paymentMethod === 'card'
-                                            ? 'border-blue-600 bg-blue-500/5 ring-4 ring-blue-500/5'
-                                            : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}
-                                    >
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${paymentMethod === 'card' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                                                <CreditCard className="w-6 h-6" />
-                                            </div>
-                                            {paymentMethod === 'card' && <CheckCircle className="w-6 h-6 text-blue-600" />}
-                                        </div>
-                                        <h4 className="font-black uppercase tracking-widest text-xs mb-1">Plastic Currency</h4>
-                                        <p className="text-sm font-bold opacity-80">Credit / Debit Card</p>
-                                    </button>
-
-                                    <button
-                                        onClick={() => setPaymentMethod('upi')}
-                                        className={`p-6 rounded-[2rem] border-2 text-left transition-all ${paymentMethod === 'upi'
-                                            ? 'border-blue-600 bg-blue-500/5 ring-4 ring-blue-500/5'
-                                            : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'}`}
-                                    >
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${paymentMethod === 'upi' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                                                <Wallet className="w-6 h-6" />
-                                            </div>
-                                            {paymentMethod === 'upi' && <CheckCircle className="w-6 h-6 text-blue-600" />}
-                                        </div>
-                                        <h4 className="font-black uppercase tracking-widest text-xs mb-1">Instant Pay</h4>
-                                        <p className="text-sm font-bold opacity-80">UPI / Wallet Transfer</p>
-                                    </button>
-                                </div>
-
-                                <form onSubmit={handlePayment} className="space-y-8">
-                                    {paymentMethod === 'card' ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <div className="md:col-span-2 space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Account Holder Name</Label>
-                                                <Input
-                                                    placeholder="Johnathan Doe"
-                                                    className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 px-6 font-bold focus:ring-blue-500/20"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="md:col-span-2 space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Card Identification Number</Label>
-                                                <div className="relative">
+                                    <form onSubmit={handlePayment} className="space-y-10">
+                                        {paymentMethod === 'card' ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                <div className="md:col-span-2 space-y-4">
+                                                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Digital Signature Name</Label>
                                                     <Input
-                                                        placeholder="0000 0000 0000 0000"
-                                                        className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 px-6 font-bold"
+                                                        placeholder="e.g. PROF. ARCHI PATEL"
+                                                        className="h-18 rounded-2xl bg-slate-50/50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 px-8 font-black text-lg focus:ring-blue-500/10 transition-all uppercase placeholder:opacity-30"
                                                         required
                                                     />
-                                                    <CreditCard className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-400" />
+                                                </div>
+                                                <div className="md:col-span-2 space-y-4">
+                                                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Card Identification String</Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            placeholder="0000 0000 0000 0000"
+                                                            className="h-18 rounded-2xl bg-slate-50/50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 px-8 font-black text-lg"
+                                                            required
+                                                        />
+                                                        <CreditCard className="absolute right-8 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-300" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Expiry Timeline</Label>
+                                                    <Input
+                                                        placeholder="MM / YY"
+                                                        className="h-18 rounded-2xl bg-slate-50/50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 px-8 font-black text-lg"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Security Hash (CVV)</Label>
+                                                    <Input
+                                                        placeholder="•••"
+                                                        type="password"
+                                                        className="h-18 rounded-2xl bg-slate-50/50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 px-8 font-black text-lg"
+                                                        required
+                                                    />
                                                 </div>
                                             </div>
-                                            <div className="space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Expiry Timeline</Label>
-                                                <Input
-                                                    placeholder="MM/YY"
-                                                    className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 px-6 font-bold"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Security CVV</Label>
-                                                <Input
-                                                    placeholder="XYZ"
-                                                    type="password"
-                                                    className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 px-6 font-bold"
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-6">
-                                            <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-950 border-2 border-dashed border-slate-200 dark:border-slate-800 text-center space-y-6">
-                                                <div className="w-48 h-48 bg-white mx-auto rounded-3xl p-4 flex items-center justify-center flex-col gap-2 border border-slate-100 shadow-lg">
-                                                    <div className="w-full h-full bg-[url('https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=AUTOLMS_PAYMENT')] bg-center bg-no-repeat bg-contain opacity-80"></div>
+                                        ) : (
+                                            <div className="space-y-10">
+                                                <div className="p-12 rounded-[3rem] bg-slate-50/50 dark:bg-slate-950/50 border-2 border-dashed border-slate-100 dark:border-slate-800 text-center space-y-8 group/qr transition-all duration-500 hover:border-blue-500/30">
+                                                    <div className="relative w-56 h-56 mx-auto bg-white rounded-[2rem] p-6 shadow-2xl transition-transform duration-500 group-hover/qr:scale-105">
+                                                        <div className="absolute inset-0 bg-blue-600/5 rounded-[2rem] blur-xl opacity-0 group-hover/qr:opacity-100 transition-opacity"></div>
+                                                        <img 
+                                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/verify/AUTOLMS_PAYMENT_FOR_${id}`)}`} 
+                                                            className="relative w-full h-full object-contain opacity-80" 
+                                                            alt="QR Code" 
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-black uppercase tracking-[0.3em] text-[10px] text-blue-600 mb-2">Omnichannel Interface</h4>
+                                                        <p className="text-xs text-slate-500 font-bold tracking-tight">Scan with GPay, PhonePe, or Apple Pay</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-black uppercase tracking-widest text-xs text-blue-600 mb-2">Scan with Any UPI App</h4>
-                                                    <p className="text-xs text-slate-500 font-medium">GPay, PhonePe, Paytm supported</p>
+                                                <div className="space-y-4">
+                                                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-2">Alternative UPI ID</Label>
+                                                    <Input
+                                                        placeholder="identifier@institution"
+                                                        value={upiId}
+                                                        onChange={(e) => setUpiId(e.target.value)}
+                                                        className="h-18 rounded-2xl bg-slate-50/50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 px-8 font-black text-lg"
+                                                    />
                                                 </div>
                                             </div>
-                                            <div className="space-y-3">
-                                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Or Enter UPI Identifier</Label>
-                                                <Input
-                                                    placeholder="youremail@upi"
-                                                    value={upiId}
-                                                    onChange={(e) => setUpiId(e.target.value)}
-                                                    className="h-16 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 px-6 font-bold"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    <div className="pt-8">
-                                        <Button
-                                            type="submit"
-                                            disabled={isProcessing}
-                                            className="w-full h-18 rounded-3xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xl shadow-2xl shadow-blue-500/30 group active:scale-[0.98] transition-all"
-                                        >
-                                            {isProcessing ? (
-                                                <div className="flex items-center gap-3">
-                                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                                    Verifying Gateway...
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center justify-center gap-4">
-                                                    Authorize Payment of ${course.price}
-                                                    <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                                                </div>
-                                            )}
-                                        </Button>
-                                        <p className="text-center text-xs text-slate-500 mt-6 flex items-center justify-center gap-2 font-bold uppercase tracking-widest">
-                                            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                                            3D Secure Authentication Enabled
-                                        </p>
-                                    </div>
-                                </form>
-                            </div>
-
-                            <div className="flex items-center justify-between px-8">
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => navigate(-1)}
-                                    className="text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:text-slate-900"
-                                >
-                                    <ArrowLeft className="w-4 h-4 mr-2" />
-                                    Modify Order
-                                </Button>
-                                <div className="flex items-center gap-4">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4 opacity-50 grayscale hover:grayscale-0 transition-all" alt="Visa" />
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-6 opacity-50 grayscale hover:grayscale-0 transition-all" alt="Mastercard" />
-                                    <img src="https://static-assets.razorpay.com/logos/upi.svg" className="h-3 opacity-50 grayscale hover:grayscale-0 transition-all" alt="UPI" />
+                                        <div className="pt-6">
+                                            <Button
+                                                type="submit"
+                                                disabled={isProcessing}
+                                                className="w-full h-24 rounded-[2rem] bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-black dark:hover:bg-slate-100 font-black text-2xl uppercase tracking-widest shadow-2xl shadow-slate-900/20 dark:shadow-white/10 active:scale-[0.98] transition-all group overflow-hidden relative"
+                                            >
+                                                <span className="relative z-10 flex items-center justify-center gap-4">
+                                                    Authorize Transaction
+                                                    <ChevronRight className="w-8 h-8 group-hover:translate-x-1 transition-transform" />
+                                                </span>
+                                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                            </Button>
+                                            <p className="text-center text-[9px] text-slate-400 mt-8 flex items-center justify-center gap-3 font-black uppercase tracking-[0.2em]">
+                                                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                                                Biometric 3D Secure Protection Enabled
+                                            </p>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
+
+                        {/* Right Column: Mini Summary */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="lg:col-span-4 space-y-8 sticky top-32"
+                        >
+                            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 border border-white/50 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+
+                                <div className="relative space-y-8">
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2 uppercase">Order Manifest</h3>
+                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">Authentication Required</p>
+                                    </div>
+
+                                    <div className="flex gap-4 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                        <img
+                                            src={course.thumbnail === 'no-image.jpg' ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60' : (course.thumbnail?.startsWith('http') ? course.thumbnail : `http://localhost:5000/uploads/${course.thumbnail}`)}
+                                            className="w-16 h-16 rounded-xl object-cover border-2 border-white dark:border-slate-700 shadow-md"
+                                            alt=""
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-[11px] font-black line-clamp-2 uppercase tracking-tight leading-snug">{course.title}</h4>
+                                            <p className="text-[9px] text-blue-600 mt-1 uppercase tracking-widest font-black italic">{course.category}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            <span>Institutional Fee</span>
+                                            <span>${(course.price * 1.5).toFixed(0)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                                            <span>Strategic Credit</span>
+                                            <span>-${(course.price * 0.5).toFixed(0)}</span>
+                                        </div>
+                                        <div className="h-px bg-slate-100 dark:bg-slate-800"></div>
+                                        <div className="flex flex-col gap-2 pt-2">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Authorization</p>
+                                            <p className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">${course.price}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-6 justify-center pt-4 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-4" alt="Visa" />
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-7" alt="Mastercard" />
+                                        <img src="https://static-assets.razorpay.com/logos/upi.svg" className="h-4" alt="UPI" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-8 rounded-[2.5rem] bg-blue-600 text-white shadow-2xl shadow-blue-500/30 relative overflow-hidden group cursor-default">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 transition-transform duration-1000 group-hover:scale-150"></div>
+                                <div className="relative flex items-start gap-4">
+                                    <LockKeyhole className="w-6 h-6 shrink-0 mt-1" />
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-black uppercase tracking-widest">Sovereign Protection</p>
+                                        <p className="text-[10px] font-medium leading-relaxed opacity-80 italic">Your financial data is never stored on our local cloud. All transactions are proxied through a 256-bit AES military-grade vault.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </div>

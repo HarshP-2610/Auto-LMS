@@ -10,6 +10,7 @@ import { Contact } from '@/pages/public/Contact';
 import { CourseConfirmation } from '@/pages/checkout/CourseConfirmation';
 import { PaymentPage } from '@/pages/checkout/PaymentPage';
 import { PaymentSuccess } from '@/pages/checkout/PaymentSuccess';
+import { VerifyPage } from '@/pages/checkout/VerifyPage';
 
 // Auth Pages
 import { Login } from '@/pages/auth/Login';
@@ -52,6 +53,8 @@ import { SystemSettings } from '@/dashboards/admin/SystemSettings';
 import { AdminRequests } from '@/dashboards/admin/AdminRequests';
 import { AdminProfile } from '@/dashboards/admin/AdminProfile';
 import { AdminStudentDetails } from '@/dashboards/admin/AdminStudentDetails';
+import { InstructorPortfolio } from '@/dashboards/admin/InstructorPortfolio';
+import { AdminInstructorCourses } from '@/dashboards/admin/AdminInstructorCourses';
 import { Messages } from '@/pages/shared/Messages';
 
 export function AppRoutes() {
@@ -66,6 +69,7 @@ export function AppRoutes() {
       <Route path="/checkout/confirmation/:id" element={<CourseConfirmation />} />
       <Route path="/checkout/payment/:id" element={<PaymentPage />} />
       <Route path="/checkout/success" element={<PaymentSuccess />} />
+      <Route path="/verify/:sessionId" element={<VerifyPage />} />
 
       {/* Auth Routes */}
       <Route path="/auth/login" element={<Login />} />
@@ -105,6 +109,8 @@ export function AppRoutes() {
       <Route path="/admin/students" element={<ManageStudents />} />
       <Route path="/admin/students/:id" element={<AdminStudentDetails />} />
       <Route path="/admin/instructors" element={<ManageInstructors />} />
+      <Route path="/admin/instructors/:id/portfolio" element={<InstructorPortfolio />} />
+      <Route path="/admin/instructors/:id/courses" element={<AdminInstructorCourses />} />
       <Route path="/admin/courses" element={<AdminManageCourses />} />
       <Route path="/admin/requests" element={<AdminRequests />} />
       <Route path="/admin/analytics" element={<PlatformAnalytics />} />

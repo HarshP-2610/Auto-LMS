@@ -94,6 +94,22 @@ const userSchema = new mongoose.Schema({
     expertise: [{
         type: String
     }],
+    subject: {
+        type: String,
+        default: ''
+    },
+    educationalDetails: {
+        type: String,
+        default: ''
+    },
+    workExperience: {
+        type: Number,
+        default: 0
+    },
+    areaOfExpertise: {
+        type: String,
+        default: ''
+    },
     payoutSettings: {
         method: {
             type: String,

@@ -37,10 +37,10 @@ app.use(cors());
 
 // Session Middleware
 const session = require('express-session');
-app.use(session({ 
-    secret: process.env.JWT_SECRET || 'secret', 
-    resave: false, 
-    saveUninitialized: false 
+app.use(session({
+    secret: process.env.JWT_SECRET || 'secret',
+    resave: false,
+    saveUninitialized: false
 }));
 
 // Passport Middleware

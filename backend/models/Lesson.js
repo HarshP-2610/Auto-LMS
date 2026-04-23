@@ -25,4 +25,6 @@ const lessonSchema = new mongoose.Schema({
     },
 });
 
+lessonSchema.index({ course: 1 });
+
 module.exports = mongoose.model('Lesson', lessonSchema);

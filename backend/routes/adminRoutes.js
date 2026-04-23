@@ -14,7 +14,9 @@ const {
     getAdminNotifications,
     deleteUser,
     getFullCourseDetails,
-    getStudentFullDetails
+    getStudentFullDetails,
+    getInstructorFullDetails,
+    getPlatformAnalytics
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -26,6 +28,9 @@ const adminCheck = (req, res, next) => {
         res.status(401).json({ message: 'Not authorized as an admin' });
     }
 };
+
+router.route('/analytics')
+    .get(protect, adminCheck, getPlatformAnalytics);
 
 router.route('/pending-instructors')
     .get(protect, adminCheck, getPendingInstructors);
@@ -56,6 +61,9 @@ router.route('/users/:id')
 
 router.route('/users/:id/full-details')
     .get(protect, adminCheck, getStudentFullDetails);
+
+router.route('/users/:id/instructor-details')
+    .get(protect, adminCheck, getInstructorFullDetails);
 
 router.route('/courses-all')
     .get(protect, adminCheck, getAllCourses);
